@@ -195,6 +195,14 @@ model. Builds/tests skipped locally this session; validated via CI push.
       a new default-OFF toggle (e.g. `HideLauncherSearchBar`) in `nav_prefs.xml` (Recents/launcher
       block lives under Navigation now). NOT STARTED -- needs a feasibility check on the A16 launcher
       QSB hierarchy + brainstorming before implementation.
+- [ ] **[BUG] Double-tap to wake phone not working** (NEW, 2026-06-21, user-reported on-device) --
+      the "Double-tap to wake phone" toggle (pref `doubleTapToWake`, "Disables single-tap to wake";
+      lives in the AOD/doze block -- moved to `lock_screen_prefs.xml` under Lock & security in the
+      Session-6 reorg) is ON but does nothing on the current build. Needs on-device root-cause: find
+      the modpack that consumes `doubleTapToWake` (likely a doze/AOD or `PhoneWindowManager`/tap-gesture
+      hook), check whether the hooked method/signature still matches on A16 QPR (param-count or
+      version-branch drift is the usual culprit -- cf. the StatusbarGestures/EasyUnlock entries in
+      tasks.md), and confirm the modpack's target package is in scope.list. NOT STARTED -- needs a device.
 <!-- Append one task per feature as they are requested. Each feature = an isolated,
      easily-rebasable change set on `patch`. -->
 
