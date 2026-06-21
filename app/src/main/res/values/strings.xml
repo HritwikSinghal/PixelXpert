@@ -372,6 +372,9 @@
     <string name="milliseconds">Milliseconds</string>
     <string name="duration_seconds">%d Seconds</string>
     <string name="hours">Hours</string>
+    <string name="diagnostics_category_title">Diagnostics</string>
+    <string name="verbose_logging_title">Verbose logging</string>
+    <string name="verbose_logging_summary">Log detailed hook and feature activity to the LSPosed/logcat module log. Enable only while reproducing a problem; it increases log output. Errors are always logged regardless of this setting.</string>
     <string name="system_time_title">System time</string>
     <string name="sync_ntp_time_title">Use NTP to sync time</string>
     <string name="ntp_time_interval_title">Time synchronization interval</string>

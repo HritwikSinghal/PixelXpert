@@ -18,6 +18,7 @@ import sh.siava.pixelxpert.xposed.XPrefs;
 import sh.siava.pixelxpert.xposed.XposedModPack;
 import sh.siava.pixelxpert.xposed.annotations.SystemUIModPack;
 import sh.siava.pixelxpert.xposed.utils.reflection.ReflectedClass;
+import sh.siava.pixelxpert.xposed.utils.toolkit.Logger;
 
 /**
  * @noinspection RedundantThrows
@@ -35,6 +36,16 @@ public class BatteryDataProvider extends XposedModPack {
 
 	@SuppressLint("StaticFieldLeak")
 	private static BatteryDataProvider instance = null;
+
+	/** Logged at most once: a battery accessor was called while the provider isn't initialized in
+	 *  this process, so every battery-aware feature is silently reading default values. */
+	private static boolean warnedNoInstance = false;
+	private static void warnNotInitialized(Throwable t) {
+		if (!warnedNoInstance) {
+			warnedNoInstance = true;
+			Logger.logWarn("BatteryDataProvider not initialized; battery-aware features will read defaults", t);
+		}
+	}
 
 	List<BatteryStatusCallback> mStatusCallbacks = new ArrayList<>();
 	private boolean mCharging;
@@ -179,7 +190,8 @@ public class BatteryDataProvider extends XposedModPack {
 	public static boolean isCharging() {
 		try {
 			return instance.mCharging && !instance.mIsBatteryDefender;
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			warnNotInitialized(t);
 			return false;
 		}
 	}
@@ -188,7 +200,8 @@ public class BatteryDataProvider extends XposedModPack {
 	{
 		try {
 			return instance.mIsBatteryDefender;
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			warnNotInitialized(t);
 			return false;
 		}
 	}
@@ -196,7 +209,8 @@ public class BatteryDataProvider extends XposedModPack {
 	public static int getCurrentLevel() {
 		try {
 			return instance.mCurrentLevel;
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			warnNotInitialized(t);
 			return 0;
 		}
 	}
@@ -204,7 +218,8 @@ public class BatteryDataProvider extends XposedModPack {
 	public static boolean isPowerSaving() {
 		try {
 			return instance.mPowerSave;
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			warnNotInitialized(t);
 			return false;
 		}
 	}
@@ -212,7 +227,8 @@ public class BatteryDataProvider extends XposedModPack {
 	public static boolean isFastCharging() {
 		try {
 			return instance.mCharging && instance.mIsFastCharging;
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			warnNotInitialized(t);
 			return false;
 		}
 	}

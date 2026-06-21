@@ -107,7 +107,10 @@ public class ScreenOffKeys extends XposedModPack {
 			AnimateFlashlight = Xprefs.getBoolean("AnimateFlashlight", false);
 			//noinspection ResultOfMethodCallIgnored
 			CameraManager(); //init CameraManager to listen to flash status
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			// If any pref parse throws, all key-action prefs silently stay at their defaults and the
+			// configured screen-off-key actions stop working -- log so the bad value is diagnosable.
+			logWarn("ScreenOffKeys: failed to load key-action preferences", t);
 		}
 	}
 

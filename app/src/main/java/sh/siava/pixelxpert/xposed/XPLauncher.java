@@ -196,14 +196,17 @@ public class XPLauncher extends XposedModule implements ServiceConnection {
 			XposedModPack instance = thisClass.getConstructor(Context.class).newInstance(mContext);
 			try {
 				instance.onPreferenceUpdated();
-			} catch (Throwable ignored) {
+			} catch (Throwable t) {
+				// A failed initial pref read leaves the modpack at default state; it would then likely
+				// misbehave later with no trace of this being the cause -- so log instead of swallowing.
+				Logger.logWarn("onPreferenceUpdated failed at load for " + thisClass.getName(), t);
 			}
 
 			instance.onPackageLoaded(PRParam);
 			runningMods.add(instance);
+			Logger.logVerbose("Loaded modpack " + thisClass.getSimpleName() + " for " + PRParam.getPackageName());
 		} catch (Throwable T) {
-			Logger.log("Start Error Dump - Occurred in " + thisClass.getName());
-			Logger.log(T);
+			Logger.logError("Start Error Dump - Occurred in " + thisClass.getName(), T);
 		}
 	}
 

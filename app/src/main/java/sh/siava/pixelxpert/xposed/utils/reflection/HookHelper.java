@@ -11,6 +11,7 @@ import java.util.Set;
 
 import de.robv.android.xposed.XposedHelpers;
 import io.github.libxposed.api.XposedInterface;
+import sh.siava.pixelxpert.xposed.utils.toolkit.Logger;
 
 public class HookHelper {
 	public static Set<XposedInterface.HookHandle> hookAllConstructors(Class<?> hookClass, ReflectedClass.ReflectionConsumer callback, boolean runBefore, XposedInterface xposedInterface) {
@@ -24,7 +25,16 @@ public class HookHelper {
 
 	public static Set<XposedInterface.HookHandle> hookAllMethods(Class<?> hookClass, String methodName, ReflectedClass.ReflectionConsumer callback, boolean runBefore, XposedInterface xposedInterface) {
 		ArraySet<XposedInterface.HookHandle> result = new ArraySet<>();
-		for(Executable method : findMethods(hookClass, methodName)) {
+		Set<Method> methods = findMethods(hookClass, methodName);
+		// No method by this name on the resolved class -> the hook installs nothing and the feature
+		// silently dies. This is the single most common cause of a feature breaking after an OS
+		// update (method renamed/removed). Surface it unconditionally so it shows up in logcat.
+		if (methods.isEmpty()) {
+			Logger.logWarn("Hook NOT installed: no method '" + methodName + "' on "
+					+ hookClass.getName() + " -- target API may have changed");
+			return result;
+		}
+		for(Executable method : methods) {
 			result.add(hookMethod(method, callback, runBefore, xposedInterface));
 		}
 		return result;
@@ -48,7 +58,7 @@ public class HookHelper {
 
 					if(runBefore)
 					{
-						callback.run(param);
+						runCallback(callback, param, hookMethod);
 						if(param.isResultSet)
 							return param.result; //we won't proceed if result is already set
 
@@ -57,10 +67,26 @@ public class HookHelper {
 					else
 					{
 						param.result = chain.proceed(param.args);
-						callback.run(param);
+						runCallback(callback, param, hookMethod);
 						return param.result;
 					}
 				});
+	}
+
+	/**
+	 * Invokes a feature's hook callback, logging (then re-throwing, to preserve existing control
+	 * flow) any throwable it raises. Without this, an exception inside a hook lambda is invisible to
+	 * us -- the feature just stops working with no trace of why.
+	 */
+	private static void runCallback(ReflectedClass.ReflectionConsumer callback, RunParam param, Executable hookMethod) throws Throwable {
+		try {
+			callback.run(param);
+		}
+		catch (Throwable t) {
+			Logger.logError("Hook callback threw for "
+					+ hookMethod.getDeclaringClass().getName() + "#" + hookMethod.getName(), t);
+			throw t;
+		}
 	}
 
 	private static Set<Executable> findConstructors(Class<?> clazz)

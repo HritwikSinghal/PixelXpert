@@ -448,7 +448,10 @@ public class KeyguardMods extends XposedModPack {
 
 			updateMiddleTexts();
 			setMiddleColor();
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			// Outer boundary of the keyguard middle-text setup. It's swallowed here so it never reaches
+			// the hook-callback safety net -- log so a broken custom carrier/middle text is diagnosable.
+			logWarn("KeyguardMods: failed to set up keyguard middle text", t);
 		}
 	}
 

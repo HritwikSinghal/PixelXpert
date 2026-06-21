@@ -6,6 +6,8 @@ import static sh.siava.pixelxpert.xposed.utils.reflection.HookHelper.hookAllMeth
 import static sh.siava.pixelxpert.xposed.utils.reflection.HookHelper.hookMethod;
 import static sh.siava.pixelxpert.xposed.utils.toolkit.Logger.log;
 
+import sh.siava.pixelxpert.xposed.utils.toolkit.Logger;
+
 import android.annotation.SuppressLint;
 import android.util.ArraySet;
 
@@ -28,7 +30,6 @@ public class ReflectedClass
 	private static ClassLoader defaultClassloader = null;
 	private static ClassLoader frameworkClassloader = null;
 	private static XposedInterface defaultXposedInterface;
-	private static final boolean FLAG_DEBUG_HOOKS = false;
 	Class<?> clazz;
 	public ReflectedClass(Class<?> clazz)
 	{
@@ -200,7 +201,13 @@ public class ReflectedClass
 		@SuppressLint("DefaultLocale")
 		protected Set<XposedInterface.HookHandle> runBefore(XposedInterface xposedInterface, ReflectionConsumer consumer, boolean log)
 		{
-			if(clazz == null) return new ArraySet<>();
+			if(clazz == null) {
+				// ofIfPossible() returned null (target class absent on this build) -> the hook silently
+				// no-ops. Surface it so a missing class is diagnosable instead of invisible.
+				Logger.logWarn("Hook skipped: class not resolved for method '" + methodName
+						+ "' (ofIfPossible target missing)");
+				return new ArraySet<>();
+			}
 
 			Set<XposedInterface.HookHandle> unhooks;
 			if(isConstructor)
@@ -213,7 +220,7 @@ public class ReflectedClass
 					consumer.run(param);
 				}, true, xposedInterface);
 
-				if(log || FLAG_DEBUG_HOOKS)
+				if(log || Logger.isVerbose())
 				{
 					StackTraceElement element = Thread.currentThread().getStackTrace()[2];
 					String callingClassName = element.getClassName();
@@ -231,7 +238,7 @@ public class ReflectedClass
 					consumer.run(param);
 				}, true, xposedInterface));
 
-				if(log || FLAG_DEBUG_HOOKS)
+				if(log || Logger.isVerbose())
 				{
 					StackTraceElement element = Thread.currentThread().getStackTrace()[2];
 					String callingClassName = element.getClassName();
@@ -249,7 +256,7 @@ public class ReflectedClass
 					consumer.run(param);
 				}, true, xposedInterface);
 				
-				if(log || FLAG_DEBUG_HOOKS)
+				if(log || Logger.isVerbose())
 				{
 					StackTraceElement element = Thread.currentThread().getStackTrace()[2];
 					String callingClassName = element.getClassName();
@@ -267,7 +274,13 @@ public class ReflectedClass
 		@SuppressLint("DefaultLocale")
 		protected Set<XposedInterface.HookHandle> runAfter(XposedInterface xposedInterface, ReflectionConsumer consumer, boolean log)
 		{
-			if(clazz == null) return new ArraySet<>();
+			if(clazz == null) {
+				// ofIfPossible() returned null (target class absent on this build) -> the hook silently
+				// no-ops. Surface it so a missing class is diagnosable instead of invisible.
+				Logger.logWarn("Hook skipped: class not resolved for method '" + methodName
+						+ "' (ofIfPossible target missing)");
+				return new ArraySet<>();
+			}
 
 			Set<XposedInterface.HookHandle> unhooks;
 			if(isConstructor)
@@ -280,7 +293,7 @@ public class ReflectedClass
 					consumer.run(param);
 				}, false, xposedInterface);
 
-				if(log || FLAG_DEBUG_HOOKS)
+				if(log || Logger.isVerbose())
 				{
 					StackTraceElement element = Thread.currentThread().getStackTrace()[2];
 					String callingClassName = element.getClassName();
@@ -298,7 +311,7 @@ public class ReflectedClass
 					consumer.run(param);
 				}, false, xposedInterface));
 
-				if(log || FLAG_DEBUG_HOOKS)
+				if(log || Logger.isVerbose())
 				{
 					StackTraceElement element = Thread.currentThread().getStackTrace()[2];
 					String callingClassName = element.getClassName();
@@ -315,7 +328,7 @@ public class ReflectedClass
 					consumer.run(param);
 				}, false, xposedInterface);
 
-				if(log || FLAG_DEBUG_HOOKS)
+				if(log || Logger.isVerbose())
 				{
 					StackTraceElement element = Thread.currentThread().getStackTrace()[2];
 					String callingClassName = element.getClassName();

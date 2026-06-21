@@ -7,6 +7,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import sh.siava.pixelxpert.BuildConfig;
 import sh.siava.pixelxpert.Constants;
 import sh.siava.pixelxpert.xposed.utils.ExtendedRemotePreferences;
+import sh.siava.pixelxpert.xposed.utils.toolkit.Logger;
 
 
 public class XPrefs {
@@ -30,6 +31,14 @@ public class XPrefs {
 	public static void loadEverything(String packageName, String... key) {
 		if (key.length > 0 && (key[0] == null || Constants.PREF_UPDATE_EXCLUSIONS.stream().anyMatch(exclusion -> key[0].startsWith(exclusion))))
 			return;
+
+		// Sync the verbose-logging gate here: this runs once at initial load and again on every pref
+		// change, in every hooked process, with the prefs handle in hand -- the single, clean point to
+		// propagate the toggle to Logger (no dedicated modpack needed).
+		if (Xprefs != null) {
+			Logger.setVerbose(Xprefs.getBoolean("verboseLogging", false));
+		}
+		Logger.logVerbose("pref update: " + (key.length > 0 ? key[0] : "<all>"));
 
 		setPackagePrefs(packageName);
 

@@ -309,8 +309,12 @@ public class DepthWallpaper extends XposedModPack {
 			}
 			compressedBitmap.close();
 		}
-		catch (Throwable ignored)
-		{}
+		catch (Throwable t)
+		{
+			// Wallpaper subject cache read/write. A persistent failure here forces a recompute every
+			// time (depth wallpaper appears to "not stick"); log so the I/O cause is visible.
+			logWarn("DepthWallpaper: wallpaper cache read/write failed", t);
+		}
 
 		if(!cacheIsValid)
 		{

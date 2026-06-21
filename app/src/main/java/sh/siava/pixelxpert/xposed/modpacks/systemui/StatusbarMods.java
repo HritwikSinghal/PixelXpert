@@ -956,8 +956,10 @@ public class StatusbarMods extends XposedModPack {
 				SystemUtils.TelephonyManager().registerTelephonyCallback(voDataExec, voDataCallback);
 				telephonyCallbackRegistered = true;
 			}
-		} catch (Exception ignored) {						
-
+		} catch (Exception e) {
+			// Builds the VoLTE/VoWiFi icon holders and registers the telephony callback; if this throws
+			// (API change / SecurityException) the icons silently never appear -- log the cause.
+			logWarn("StatusbarMods: failed to initialise VoLTE/VoWiFi data", e);
 		}
 
 		updateVoData(true);

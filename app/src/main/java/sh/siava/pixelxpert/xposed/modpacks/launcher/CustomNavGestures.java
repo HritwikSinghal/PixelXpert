@@ -258,7 +258,12 @@ public class CustomNavGestures extends XposedModPack {
 					: ((Object[]) getObjectField(o, mTasksFieldName))[0])
 					.orElse(null);
 		}
-		catch (Throwable ignored){}
+		catch (Throwable t){
+			// This locates the focused recents task by reflective field discovery across launcher
+			// versions. If a field name shifts in a new launcher build, currentFocusedTask stays null
+			// and the kill-app gesture becomes a silent no-op -- log so the cause is visible.
+			logWarn("CustomNavGestures: saveFocusedTask failed (launcher recents internals may have changed)", t);
+		}
 	}
 
 	private void runAction(int action) {
@@ -307,20 +312,26 @@ public class CustomNavGestures extends XposedModPack {
 	}
 
 	private void killForeground() {
-		if(currentFocusedTask == null) return;
+		if(currentFocusedTask == null) {
+			logWarn("CustomNavGestures: kill-app gesture had no focused task (saveFocusedTask likely failed)");
+			return;
+		}
 
 		try
 		{
-			Toast.makeText(mContext, "App Killed", Toast.LENGTH_SHORT).show();
-
+			// Force-stop first; only confirm + go home once it actually succeeded, so the "App Killed"
+			// toast never falsely claims success when the stop was denied or threw.
 			callMethod(mContext.getSystemService(Context.ACTIVITY_SERVICE),
 					"forceStopPackageAsUser",
 					((ComponentName) getObjectField(currentFocusedTask, "realActivity")).getPackageName(),
 					getObjectField(currentFocusedTask, "userId"));
 
+			Toast.makeText(mContext, "App Killed", Toast.LENGTH_SHORT).show();
 			goHome();
 		}
-		catch (Throwable ignored) {}
+		catch (Throwable t) {
+			logWarn("CustomNavGestures: failed to force-stop focused app", t);
+		}
 	}
 
 	private void goBack() {
