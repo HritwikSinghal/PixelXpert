@@ -1,5 +1,5 @@
 # Project: PixelXpert Fork Maintenance
-> Last updated: 2026-06-21 | Session: 4
+> Last updated: 2026-06-21 | Session: 7
 
 ## Overview
 This is a maintained fork of [siavash79/PixelXpert](https://github.com/siavash79/PixelXpert)
@@ -95,8 +95,125 @@ model. Builds/tests skipped locally this session; validated via CI push.
       NOT YET compiled/flashed -- `gradlew` not executable in this env. Key assumption to verify
       on-device: the services tile's preference key actually contains one of those needles; if
       not, it silently uses the top-pinned fallback (still "at top", just its own card).
+- [ ] **Reboot actions inline in main power menu** -- surface the 3 advanced-reboot actions
+      (Reboot to Bootloader, Soft Reboot, Restart SystemUI) DIRECTLY in the main long-press
+      power-menu grid (the Emergency/Lockdown/Power off/Restart screen, Image #2), styled as
+      native circular grid items so they look coherent, IN PLACE OF the nested "Advanced..."
+      button. Today these 3 live ONE LEVEL DOWN: `advancedPowerMenu` injects a
+      `PowerOptionsAction` ("Advanced...") whose submenu (`mPowerItems`) holds
+      `BootloaderAction` / `SoftRebootAction` / `SystemUIRebootAction` (that submenu = Image #1).
+      File: `app/src/main/java/sh/siava/pixelxpert/xposed/modpacks/systemui/PowerMenu.java`
+      (`GlobalActionsDialogLite#createActionItems` after-hook, ~line 61-76). Open questions to
+      settle at design time: (a) replace the "Advanced..." entry entirely, or keep it as a
+      toggle-driven choice; (b) reuse the existing `advancedPowerMenu` pref or add a new
+      default-OFF toggle in `misc_prefs.xml`; (c) icons -- each currently uses android
+      `ic_restart`; main grid may want distinct icons. NOT STARTED -- needs brainstorming + design.
+- [ ] **Updates tab still points to upstream (in-app self-update repoint)** -- the in-app
+      Updates screen shows upstream's version (e.g. `canary-499`) and would download upstream's
+      zip, because both manifest URLs in
+      `app/src/main/java/sh/siava/pixelxpert/ui/fragments/UpdateFragment.java:69-70`
+      (`stableUpdatesURL`/`canaryUpdatesURL`) still hardcode
+      `raw.githubusercontent.com/siavash79/PixelXpert/{stable,canary}/latest{Stable,Canary}.json`.
+      The updater parses `{versionCode, version, zipUrl, changelog}` from that JSON
+      (`updateChecker.run`, ~L389-431) and downloads `zipUrl` via DownloadManager.
+      NOT a one-line swap -- has a CI/release dependency: the fork must PUBLISH its own manifest
+      JSON first or the new URL 404s. Design conflict to resolve: `canary` must stay a clean
+      upstream mirror (branch model), so the fork manifest CANNOT live there -- natural home is
+      the `patch` branch (e.g. `latestPatch.json`, `zipUrl` -> a `fork-v*` GitHub Release asset,
+      `changelog` -> a fork URL), wired into the existing `fork-v*` Release pipeline
+      (`forkBuild.yml`). Decisions needed: (a) keep the Stable/Canary channel split or collapse
+      to one fork channel; (b) who writes/bumps the manifest (CI on tag push vs manual); (c)
+      changelog source/format. SEPARATE, probably-intentional upstream pointers to leave alone
+      unless decided otherwise: `PyTorchSegmentor.java:40,42` (model/lib), `Constants.java:12`
+      (`PX_ICON_PACK_REPO`), `strings.xml` `github_repo_summary`. NOT STARTED -- needs design.
+- [x] **Remove "Flashlight-leveled tile" feature (redundant)** -- stock Pixel ships this natively
+      since Android 16 QPR3 (March 2026 feature drop): native flashlight brightness slider via
+      long-press on the flashlight QS tile, identical to PixelXpert's feature. Verified via
+      9to5Google/Android Police/Gadget Hacks (2026-06-21). DONE 2026-06-21 (commit `9f29091e`
+      "feat: remove redundant leveled flashlight tile"): deleted `FlashlightTile.java` (-394
+      lines), removed prefs `leveledFlashTile`/`isFlashLevelGlobal` from `quicksettings_prefs.xml`,
+      dropped the 3 strings from `values/strings.xml` + all 28 translated copies, and trimmed
+      `PreferenceHelper.java` + `SystemUtils.java` (-11 lines). The CAUTION was heeded: the SHARED
+      `SystemUtils` flash plumbing (`getMaxFlashLevel`/`setFlashLevel`/`supportsFlashLevels`/
+      `flashPCT`) was RETAINED for the sibling features that depend on it ("Control flashlight with
+      volume buttons", "Flashlight fade effect") -- only the leveled-tile-specific code was removed.
+      Verified zero remnants by grep. (Note: `CanaryChangelog.md` retains historical upstream lines
+      mentioning the leveled tile -- left as-is; it is a dated changelog record, not live docs.)
+- [x] **[BUG] Vibrate on call answered/disconnect not working** -- the `vibrateOnAnswered` /
+      `vibrateOnDrop` feature (prefs `dialer_prefs.xml:11-25`) did nothing on-device. ROOT CAUSE:
+      the `CallVibrator` modpack hooks `com.android.server.telecom.InCallController#onCallStateChanged`
+      but was scoped via `@TelecomServerModPack` to package `com.android.server.telecom`, which is
+      NOT in `scope.list` -- so LSPosed never injected it and the modpack never loaded (hidden by 3
+      nested silent `catch(Throwable ignored)`). Commit `0c09fc33` had retargeted it from
+      `@FrameworkModPack` to `@TelecomServerModPack` without adding scope. ON-DEVICE CHECK
+      (2026-06-21, Pixel `5C181JEA315207`): `adb shell ps -A | grep -i telecom` returns NOTHING
+      and `system_server` (pid 1663) is alive -- so Telecom is hosted INSIDE system_server, there
+      is no `com.android.server.telecom` process to inject into. Also confirmed via the LSPosed
+      "Connected packages" screen: telecom absent from scope. FIX APPLIED 2026-06-21: retargeted
+      `CallVibrator` to `@FrameworkModPack` (package `android` = system_server, already in scope)
+      and removed the now-meaningless `@MainProcessModPack`/`@ChildProcessModPack` telecom
+      workaround annotations -- now matches the working `BrightnessRange` framework-modpack pattern;
+      `ReflectedClass.of` resolves `InCallController` via the system_server classloader. COMMITTED
+      as `7a6e4a18` ("fix: load CallVibrator in system_server for call vibration"); compiles in
+      `assembleDebug` (Session 6). VERIFY on-device: make a call, confirm vibrate on answer and on disconnect. Secondary risk if still silent:
+      `onCallStateChanged` arg layout (args[1]/args[2] = old/new state) may have shifted on A16 QPR.
+      CLEANUP NOTE: `@TelecomServerModPack` annotation is now unused dead code (the
+      `TELECOM_SERVER_PACKAGE` constant is still referenced by telecom special-casing in
+      `XPLauncher.java:93,116,121-122`, so the constant stays) -- safe to delete the annotation file.
+- [ ] **Bluetooth device battery in status bar** (NEW, from crDroid) -- show the connected BT
+      device's battery level as a status-bar indicator. Verified-feasible scope: new
+      `@SystemUIModPack` `BluetoothBatteryIcon.java` following the existing VoLTE-icon pattern in
+      `modpacks/systemui/StatusbarMods.java` (capture `StatusBarIconControllerImpl` in
+      afterConstruction ~L494; init icon in `PhoneStatusBarViewController.onViewAttached` ~L642;
+      show/hide via `StatusBarIconController.setIcon`/`removeAllIconsForSlot` with a new slot
+      e.g. `bt_battery`). State source: `BroadcastReceiver` on BT connection-state changes +
+      `BluetoothDevice.getBatteryLevel()` (API 31+, returns -1 if unavailable -> hide icon). Adds:
+      new toggle `BluetoothBatteryIconEnabled` in `statusbar_settings.xml`, title string, a
+      `ic_bluetooth_battery` drawable, and a `BluetoothManager()` helper in `SystemUtils.java`.
+      No existing BT-battery code (VolumeTile detects BT audio devices but not battery). NOT STARTED.
+- [ ] **QS brightness slider visibility + position** (NEW, from crDroid) -- (a) always-show /
+      show-only-when-expanded / hidden, and (b) above vs below the QS tiles. Scope: new
+      `@SystemUIModPack` `QSBrightnessSlider.java` (pattern per `QSTileGrid.java`). CAVEAT/RISK:
+      A16 QS is the new COMPOSE stack (`qs.panels.ui.compose.*`) -- the brightness slider may NOT
+      be a simple `View` with a stable parent, so classic `setVisibility` / `removeView+addView`
+      reordering used elsewhere (`MultiStatusbarRows.java:66-71`) may not apply cleanly; hook
+      candidates `brightness.BrightnessSliderController` (onViewAttached -> slider view) and the
+      QS panel/compose layout for ordering, plus expansion state via shade controller
+      (`StatusbarGestures.java`). Existing `BrightnessRange.java` hooks brightness CLAMPING, not
+      the slider UI -- no overlap. Adds: 2 `MaterialListPreference`s in `quicksettings_prefs.xml`,
+      arrays + strings. NEEDS a feasibility spike on the Compose QS hierarchy before committing
+      to an approach. NOT STARTED.
+- [ ] **Hide the launcher bottom search bar (QSB)** (NEW, 2026-06-21, user request) -- remove the
+      "Search" bar pinned at the bottom of the Pixel launcher home screen. It is the Quick Search
+      Box (QSB) widget baked into the hotseat of `com.google.android.apps.nexuslauncher` (quickstep,
+      closed-source) -- it persists even after the user disables/removes the Google app, so there is
+      no stock toggle. Same hook surface as the shipped Force-close feature (`@LauncherModPack`,
+      Launcher3 quickstep -- see [[recents-task-menu-lives-in-quickstep]]). Likely approach: hook the
+      hotseat/QSB view setup and hide it (`setVisibility(GONE)` / suppress add), candidate classes
+      `com.android.launcher3.qsb.*` / `Hotseat` / `QsbContainerView`; must be fully defensive
+      (`ofIfPossible` + try/catch) since the target is closed-source and version-fragile. Gate behind
+      a new default-OFF toggle (e.g. `HideLauncherSearchBar`) in `nav_prefs.xml` (Recents/launcher
+      block lives under Navigation now). NOT STARTED -- needs a feasibility check on the A16 launcher
+      QSB hierarchy + brainstorming before implementation.
 <!-- Append one task per feature as they are requested. Each feature = an isolated,
      easily-rebasable change set on `patch`. -->
+
+### Phase 5: Settings UI reorganization (2026-06-21, Session 6)
+Collapsed the 9 flat top-level settings categories into 7 functional umbrellas. Preference keys
+unchanged -> every mod binds identically; only UI placement moved. Verified locally with
+`assembleDebug` (BUILD SUCCESSFUL; JDK 17 launcher + Android SDK, `RangeSliderPreference` submodule
+initialized). Commits `b72d4a54` (reorg) + `9aa71bca` (docs/audit).
+- [x] 7 umbrellas: System UI (new `SystemUiFragment` -> Quick settings + Status bar + Notifications),
+      Appearance (`ThemingFragment`), Lock & security (`LockScreenFragment` + AOD/doze block),
+      Navigation (`NavFragment` + Recents block), System & hardware (`MiscFragment`, slimmed),
+      Connectivity (`HotSpotFragment`), Apps & calls (new `AppsCallsFragment` -> Package mgr + Dialer).
+- [x] Dissolved the Misc grab-bag (Doze->Lock, Recents->Nav, app-switch->Status bar,
+      Notifications->System UI) and folded the single-screen Hotspot + Package-manager top-level slots.
+- [x] Routing: 2 new fragments + drill actions in `nav_graph_phone` + `nav_graph_tablet_details`;
+      `SettingsActivity` switch updated. Reused 5 existing fragments as umbrella landings to limit churn.
+- [x] Redundancy/bug audit recorded (CallVibrator excluded -- handled separately). See `tasks.md`.
+- [ ] Deferred (low value, needs a build): Clock/Battery-bar -> Appearance; Net-stats -> Connectivity;
+      VoLTE left in `dialer_prefs.xml` (Apps & calls, to avoid the CallVibrator agent). Tracked in `tasks.md`.
 
 ## Status Summary
 | Phase | Status | Progress |
@@ -104,7 +221,9 @@ model. Builds/tests skipped locally this session; validated via CI push.
 | Phase 1: Fork Tracking & Branch Strategy | Done | 6/6 |
 | Phase 2: Fork Build CI | Done | 8/8 |
 | Phase 3: Repo & README Cleanup | Done | 7/7 |
-| Phase 4: Custom Features (rolling) | Impl done, CI/on-device pending | 2/2 (Force close, Settings entry placement) |
+| Phase 4: Custom Features (rolling) | 4 done (1 pending verify), 5 not started | 4/9 (done: Force close, Settings entry placement, Flashlight-tile removal, [BUG] CallVibrator framework-retarget [CI/on-device verify pending]; pending: Reboot-inline, Updates-repoint, BT battery in statusbar, QS brightness slider, Hide launcher QSB search bar) |
+| Phase 5: Settings UI reorganization (Session 6) | Done | 7 umbrellas, Misc dissolved, assembleDebug green |
+| Post-Phase hardening (Session 5) | Done | build/CI/mod robustness commits, see Decisions |
 
 ## Decisions & Notes
 - 2026-06-20: Branch model = `canary` mirrors upstream, `patch` (new default) carries custom work.
@@ -126,6 +245,51 @@ model. Builds/tests skipped locally this session; validated via CI push.
   `e90b9986` are untouched. The recomposed tree was verified byte-identical to the pre-rewrite tree.
   (`patch` was subsequently rebased onto upstream's newer base commit, so the 4 commits' hashes
   have changed from their post-recompose values -- the logical structure is unchanged.)
+
+- 2026-06-21 (Session 5): post-phase hardening landed on `patch` (single author, all on top of
+  the earlier work; no concurrent-session content lost). Commits:
+  - `9f29091e` feat: remove redundant leveled flashlight tile (see Phase 4 item, now done).
+  - `c586f489` fix(build): resolve stable version from nearest `v*` tag, not the newest repo tag
+    (`GitTagProvider.kt`) -- stable channel now versions off the closest tag.
+  - `8c099810` fix(build): order version bump BEFORE assemble and stamp APK lazily
+    (`PXTasks.gradle.kts`, `app/build.gradle.kts`, `BuildUtils.kt`, `IncrementVersionTask.kt`) --
+    fixes version/APK-stamp ordering so the bumped version is the one packaged.
+  - `f3f8c533` ci: harden forkBuild release publishing and signing (`forkBuild.yml`).
+  - `ddcf814a` fix: harden Recents force-close and Settings-launcher mods
+    (`RecentsForceClose.java` +355/-, `PXSettingsLauncher.java` +289/-) -- substantially hardened
+    the two shipped Phase-4 features (defensive lookups / edge cases) beyond their initial impl.
+  These refine Phases 2-4; no plan items reopened. Docs synced to this state 2026-06-21.
+
+- 2026-06-21 (Session 6): **Settings UI reorganization** (Phase 5) landed -- 9 flat top-level
+  categories collapsed into 7 umbrellas (commits `b72d4a54` reorg + `9aa71bca` docs). Reused 5
+  existing fragments as umbrella landings + 2 new (`SystemUiFragment`, `AppsCallsFragment`) to keep
+  nav-graph churn down; preference keys preserved so no behavior change. Verified with `assembleDebug`
+  (BUILD SUCCESSFUL). This deepens upstream divergence (header/fragments/nav graphs/XML) -- resolve
+  `patch`-onto-`canary` rebase conflicts in favor of the fork. Deferred items + redundancy/bug audit
+  in `tasks.md`. Also reconciled: CallVibrator bug fix is committed as `7a6e4a18` (pending on-device verify).
+
+- 2026-06-21 (Session 6): **CI fix** -- Fork Build had been RED since the versioning-pipeline
+  hardening: commit `8c099810` dropped the APK rename, and AGP 9 removed the legacy
+  `applicationVariants.outputFileName` API, so the release APK kept its default name
+  (`app-release.apk`). Two failures resulted: the Magisk `createZip` `from(file(PixelXpert.apk))`
+  matched nothing -> zip silently shipped WITHOUT the APK; and CI staging `cp PixelXpert.apk`
+  failed loudly. FIX: new `renameReleaseApk` Copy task in `app/PXTasks.gradle.kts` copies the
+  assembled APK to `build/distApk/PixelXpert.apk` (a non-AGP dir, to dodge Gradle 9
+  overlapping-output validation), ordered assembleRelease -> renameReleaseApk -> createZip;
+  `createZip` and `forkBuild.yml` repointed to that path. Verified locally
+  (`assembleRelease renameReleaseApk createZip`): APK present and bundled in the zip.
+
+- 2026-06-21 (Session 7): **Bug-hunt fixes on the settings reorg** (`/bugs`). Two real issues fixed +
+  one false finding rejected (see `tasks.md`):
+  - Notification prefs had silently dropped out of Settings search after moving into the new
+    `system_ui_prefs.xml` (not in `HeaderFragment.searchItems[]`). Registered it + added the phone
+    nav action `action_searchPreferenceFragment_to_systemUiFragment` + marked the duplicate nav rows
+    `search:ignore`. See [[tablet-search-derives-header-nav-actions]].
+  - `createZip` consumed the APK by hardcoded path + `mustRunAfter`, so `./gradlew createZip` alone
+    could ship an APK-less zip; rewired to `from(tasks.named<Copy>("renameReleaseApk"))`.
+  - Verified: `:app:assembleDebug` + `:app:createZip --dry-run` both green.
+  - History: recomposed the 12 commits above `fork-v5.1.1-2` (`09d6ff70`) into logical commits and
+    force-pushed `patch`; nothing at/below the tag was touched. New release `fork-v5.1.1-3` published.
 
 ## Blockers
 <!-- none -->
