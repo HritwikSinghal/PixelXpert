@@ -5,8 +5,11 @@ name: Fork Build
 # (artifacts only) and on every `fork-v*` tag push (artifacts + a published GitHub Release
 # carrying the zip + APK as permanent, login-free downloads).
 # Unlike upstream's workflows (which clone siavash79/PixelXpert directly), this checks
-# out the fork's own code. If the SIGNING_KEY secret is absent the release build falls
-# back to debug signing (see app/build.gradle.kts), so this stays green without secrets.
+# out the fork's own code. If the SIGNING_KEY secret is absent, branch (artifact-only)
+# builds fall back to debug signing (see app/build.gradle.kts) so they stay green; tag
+# (fork-v*) builds, which publish a permanent public Release, instead fail fast -- a
+# debug-signed public APK has a different/non-deterministic cert and would break future
+# signed updates (INSTALL_FAILED_UPDATE_INCOMPATIBLE).
 
 on:
   push:
@@ -17,7 +20,9 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Supersede in-progress branch (artifact-only) builds, but never cancel a tag (release)
+  # build: cancelling mid-publish can leave a half-published Release with missing assets.
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   build:
@@ -45,13 +50,28 @@ jobs:
         run: chmod +x gradlew
 
       - name: Signature files preparation (optional)
+        # Secrets are passed via env (not inline ${{ }} interpolation) and quoted, so a key
+        # containing shell-special characters is decoded intact and never hits the command line.
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          WORKSPACE: ${{ github.workspace }}
         run: |
-          if [ -n "${{ secrets.SIGNING_KEY }}" ]; then
-            echo storePassword='${{ secrets.KEY_STORE_PASSWORD }}' >> ReleaseKey.properties
-            echo keyAlias='${{ secrets.ALIAS }}' >> ReleaseKey.properties
-            echo keyPassword='${{ secrets.KEY_PASSWORD }}' >> ReleaseKey.properties
-            echo storeFile='${{ github.workspace }}/ReleaseKey.jks' >> ReleaseKey.properties
-            echo ${{ secrets.SIGNING_KEY }} | base64 --decode > ${{ github.workspace }}/ReleaseKey.jks
+          if [ -n "$SIGNING_KEY" ]; then
+            {
+              echo "storePassword=$KEY_STORE_PASSWORD"
+              echo "keyAlias=$ALIAS"
+              echo "keyPassword=$KEY_PASSWORD"
+              echo "storeFile=$WORKSPACE/ReleaseKey.jks"
+            } >> ReleaseKey.properties
+            printf '%s' "$SIGNING_KEY" | base64 --decode > "$WORKSPACE/ReleaseKey.jks"
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            # A fork-v* tag build publishes a permanent, public Release; refuse to ship a
+            # debug-signed APK whose cert would break future signed updates.
+            echo "::error::SIGNING_KEY secret is required for tag (release) builds; aborting."
+            exit 1
           else
             echo "No SIGNING_KEY secret set -- release build will fall back to debug signing."
           fi
@@ -63,11 +83,13 @@ jobs:
         id: stage
         run: |
           SHORT="$(git rev-parse --short=7 HEAD)"
-          BRANCH="${GITHUB_REF_NAME}"
-          BASE="PixelXpert-${BRANCH}-${SHORT}"
+          # GITHUB_REF_NAME is the branch name on push-to-branch builds and the tag name on
+          # tag builds, matching the documented PixelXpert-<ref>-<short7hash> naming.
+          REF="${GITHUB_REF_NAME}"
+          BASE="PixelXpert-${REF}-${SHORT}"
           mkdir -p dist
           cp output/PixelXpert.zip "dist/${BASE}.zip"
-          cp app/build/outputs/apk/release/PixelXpert.apk "dist/${BASE}.apk"
+          cp app/build/distApk/PixelXpert.apk "dist/${BASE}.apk"
           echo "base=${BASE}" >> "$GITHUB_OUTPUT"
           ls -l dist
 
@@ -92,12 +114,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BASE: ${{ steps.stage.outputs.base }}
         run: |
-          # Use the annotated tag's own message as the release notes when present.
-          NOTES="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
-          [ -z "$NOTES" ] && NOTES="Automated fork build for ${GITHUB_REF_NAME}."
-          gh release create "${GITHUB_REF_NAME}" \
-            "dist/${BASE}.zip" \
-            "dist/${BASE}.apk" \
-            --title "${GITHUB_REF_NAME}" \
-            --notes "$NOTES" \
-            --verify-tag
+          # Release notes from the tag's own message ONLY for annotated tags. For a
+          # lightweight tag, %(contents) resolves to the underlying commit message, so fall
+          # back to generated notes instead of leaking an unrelated commit body.
+          NOTES="Automated fork build for ${GITHUB_REF_NAME}."
+          if [ "$(git cat-file -t "${GITHUB_REF_NAME}")" = "tag" ]; then
+            TAG_MSG="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
+            [ -n "$TAG_MSG" ] && NOTES="$TAG_MSG"
+          fi
+          # Idempotent publish: a re-run or a moved/re-pushed tag updates the existing
+          # Release's assets instead of failing on "release already exists".
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" \
+              "dist/${BASE}.zip" \
+              "dist/${BASE}.apk" \
+              --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              "dist/${BASE}.zip" \
+              "dist/${BASE}.apk" \
+              --title "${GITHUB_REF_NAME}" \
+              --notes "$NOTES" \
+              --verify-tag
+          fi
