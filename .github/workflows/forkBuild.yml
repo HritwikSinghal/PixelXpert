@@ -1,0 +1,78 @@
+name: Fork Build
+
+# Fork-only CI: builds the flashable Magisk zip + signed APK on every push to `patch`
+# and uploads both as GitHub Actions artifacts named PixelXpert-<branch>-<short7hash>.
+# Unlike upstream's workflows (which clone siavash79/PixelXpert directly), this checks
+# out the fork's own code. If the SIGNING_KEY secret is absent the release build falls
+# back to debug signing (see app/build.gradle.kts), so this stays green without secrets.
+
+on:
+  push:
+    branches:
+      - 'patch'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: JDK 21 Setup
+        uses: actions/setup-java@v5.2.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Gradlew Permissions
+        run: chmod +x gradlew
+
+      - name: Signature files preparation (optional)
+        run: |
+          if [ -n "${{ secrets.SIGNING_KEY }}" ]; then
+            echo storePassword='${{ secrets.KEY_STORE_PASSWORD }}' >> ReleaseKey.properties
+            echo keyAlias='${{ secrets.ALIAS }}' >> ReleaseKey.properties
+            echo keyPassword='${{ secrets.KEY_PASSWORD }}' >> ReleaseKey.properties
+            echo storeFile='${{ github.workspace }}/ReleaseKey.jks' >> ReleaseKey.properties
+            echo ${{ secrets.SIGNING_KEY }} | base64 --decode > ${{ github.workspace }}/ReleaseKey.jks
+          else
+            echo "No SIGNING_KEY secret set -- release build will fall back to debug signing."
+          fi
+
+      - name: Gradle Build
+        run: ./gradlew buildCanary -Pchannel=canary
+
+      - name: Stage hash-named artifacts
+        id: stage
+        run: |
+          SHORT="$(git rev-parse --short=7 HEAD)"
+          BRANCH="${GITHUB_REF_NAME}"
+          BASE="PixelXpert-${BRANCH}-${SHORT}"
+          mkdir -p dist
+          cp output/PixelXpert.zip "dist/${BASE}.zip"
+          cp app/build/outputs/apk/release/PixelXpert.apk "dist/${BASE}.apk"
+          echo "base=${BASE}" >> "$GITHUB_OUTPUT"
+          ls -l dist
+
+      - name: Upload Magisk zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.stage.outputs.base }}-zip
+          path: dist/${{ steps.stage.outputs.base }}.zip
+          if-no-files-found: error
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.stage.outputs.base }}-apk
+          path: dist/${{ steps.stage.outputs.base }}.apk
+          if-no-files-found: error
