@@ -464,42 +464,45 @@ public class SettingsActivity extends BaseActivity implements PreferenceFragment
 		NavController navController = isTabletDevice ? navControllerDetails : navControllerMain;
 
 		return switch (key) {
-			case "quicksettings_header" -> {
+			// Top-level umbrella categories
+			case "systemui_header" -> {
 				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
-				yield navigateTo(navController, R.id.action_headerFragment_to_quickSettingsFragment);
-			}
-			case "lockscreen_header" -> {
-				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
-				yield navigateTo(navController, R.id.action_headerFragment_to_lockScreenFragment);
+				yield navigateTo(navController, R.id.action_headerFragment_to_systemUiFragment);
 			}
 			case "theming_header" -> {
 				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
 				yield navigateTo(navController, R.id.action_headerFragment_to_themingFragment);
 			}
-			case "statusbar_header" -> {
+			case "lockscreen_header" -> {
 				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
-				yield navigateTo(navController, R.id.action_headerFragment_to_statusbarFragment);
+				yield navigateTo(navController, R.id.action_headerFragment_to_lockScreenFragment);
 			}
 			case "nav_header" -> {
 				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
 				yield navigateTo(navController, R.id.action_headerFragment_to_navFragment);
 			}
-			case "dialer_header" -> {
+			case "misc_header" -> {
 				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
-				yield navigateTo(navController, R.id.action_headerFragment_to_dialerFragment);
+				yield navigateTo(navController, R.id.action_headerFragment_to_miscFragment);
 			}
 			case "hotspot_header" -> {
 				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
 				yield navigateTo(navController, R.id.action_headerFragment_to_hotSpotFragment);
 			}
-			case "pm_header" -> {
+			case "apps_calls_header" -> {
 				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
-				yield navigateTo(navController, R.id.action_headerFragment_to_packageManagerFragment);
+				yield navigateTo(navController, R.id.action_headerFragment_to_appsCallsFragment);
 			}
-			case "misc_header" -> {
-				if (isTabletDevice) navController.popBackStack(R.id.headerFragment, false);
-				yield navigateTo(navController, R.id.action_headerFragment_to_miscFragment);
-			}
+			// Sub-screens reached from the System UI umbrella
+			case "quicksettings_header" ->
+					navigateTo(navController, R.id.action_systemUiFragment_to_quickSettingsFragment);
+			case "statusbar_header" ->
+					navigateTo(navController, R.id.action_systemUiFragment_to_statusbarFragment);
+			// Sub-screens reached from the Apps & calls umbrella
+			case "pm_header" ->
+					navigateTo(navController, R.id.action_appsCallsFragment_to_packageManagerFragment);
+			case "dialer_header" ->
+					navigateTo(navController, R.id.action_appsCallsFragment_to_dialerFragment);
 			case "CheckForUpdate" -> {
 				if (isTabletDevice) {
 					binding.navigationRailView.setSelectedItemId(R.id.updateFragment);

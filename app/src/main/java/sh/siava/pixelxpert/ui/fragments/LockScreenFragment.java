@@ -33,7 +33,7 @@ public class LockScreenFragment extends ControlledPreferenceFragmentCompat {
 
 	@Override
 	public String getTitle() {
-		return getString(R.string.lockscreen_header_title);
+		return getString(R.string.lock_security_title);
 	}
 
 	@Override

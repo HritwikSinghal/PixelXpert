@@ -64,6 +64,21 @@
     <string name="hotspot_header">Portable hotspot</string>
     <string name="hotspot_header_summary">If you\'re into hidden WiFi stuff</string>
 
+    <!-- Umbrella category titles/summaries (settings reorganization) -->
+    <string name="appearance_title">Appearance</string>
+    <string name="appearance_summary">Theming, icons and status-bar visuals</string>
+    <string name="systemui_title">System UI</string>
+    <string name="systemui_summary">Quick settings, status bar and notifications</string>
+    <string name="lock_security_title">Lock &amp; security</string>
+    <string name="lock_security_summary">Lock screen, fingerprint and always-on display</string>
+    <string name="system_hardware_title">System &amp; hardware</string>
+    <string name="system_hardware_summary">Power, display, buttons and date/time</string>
+    <string name="connectivity_title">Connectivity</string>
+    <string name="connectivity_summary">Hotspot and network statistics</string>
+    <string name="apps_calls_title">Apps &amp; calls</string>
+    <string name="apps_calls_summary">Package manager and phone</string>
+    <string name="app_switch_category">App switch</string>
+
     <!-- Hotspot settings-->
     <string name="hotspot_hide_ssid_title">Hide SSID</string>
     <string name="hotspot_inactivity_timeout_title">Inactivity timeout</string>
@@ -248,10 +263,7 @@
 
 
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Flashlight-leveled tile</string>
-    <string name="qs_flashlight_level_global_title">Apply flashlight level globally</string>
     <string name="qs_tile_qty_title">Quick settings tile count settings</string>
-    <string name="qs_leveled_flashlight_summary">Longpress on tile to show the slider.\nRequires supported hardware</string>
     <string name="qs_pulldown_size">Quick pull-down width</string>
     <string name="qs_pulldown_switch_title">Quick QS panel pull-down from status bar</string>
     <string name="qs_pulldown_side_title">Quick pull-down side</string>
@@ -316,6 +328,8 @@
     <string name="force_no_cutout">Ignore the camera cutout</string>
     <string name="clear_all_reposition_title">Add an accessible clear-all button to recents page</string>
     <string name="recents_force_close_title">Add a Force close button to the recents task menu</string>
+    <string name="recents_force_close_label">Force close</string>
+    <string name="recents_force_close_failed">Could not force close</string>
     <string name="force_themed_icons_title">Auto-generate missing themed icons</string>
     <string name="force_themed_icons_summary">Pixel launcher only</string>
     <string name="volume_button_step_title">Volume steps (0 to 100%)</string>

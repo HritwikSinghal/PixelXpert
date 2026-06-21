@@ -75,6 +75,20 @@
 			app:exitAnim="@anim/nav_default_exit_anim"
 			app:popEnterAnim="@anim/nav_default_pop_enter_anim"
 			app:popExitAnim="@anim/nav_default_pop_exit_anim"
+			android:id="@+id/action_headerFragment_to_systemUiFragment"
+			app:destination="@id/systemUiFragment" />
+		<action
+			app:enterAnim="@anim/nav_default_enter_anim"
+			app:exitAnim="@anim/nav_default_exit_anim"
+			app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+			app:popExitAnim="@anim/nav_default_pop_exit_anim"
+			android:id="@+id/action_headerFragment_to_appsCallsFragment"
+			app:destination="@id/appsCallsFragment" />
+		<action
+			app:enterAnim="@anim/nav_default_enter_anim"
+			app:exitAnim="@anim/nav_default_exit_anim"
+			app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+			app:popExitAnim="@anim/nav_default_pop_exit_anim"
 			android:id="@+id/action_headerFragment_to_updateFragment"
 			app:destination="@id/updateFragment" />
 		<action
@@ -393,6 +407,13 @@
 			app:popExitAnim="@anim/nav_default_pop_exit_anim"
 			android:id="@+id/action_searchPreferenceFragment_to_sleepOnFlatFragment"
 			app:destination="@id/sleepOnFlatFragment" />
+		<action
+			app:enterAnim="@anim/nav_default_enter_anim"
+			app:exitAnim="@anim/nav_default_exit_anim"
+			app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+			app:popExitAnim="@anim/nav_default_pop_exit_anim"
+			android:id="@+id/action_searchPreferenceFragment_to_systemUiFragment"
+			app:destination="@id/systemUiFragment" />
 	</fragment>
 	<fragment
 		android:id="@+id/QSTileQtyFragment"
@@ -435,4 +456,40 @@
 		android:id="@+id/iconPackCustomizationFragment"
 		android:name="sh.siava.pixelxpert.ui.fragments.iconpack.IconPackCustomizationFragment"
 		tools:layout="@layout/fragment_icon_pack_customization" />
+	<fragment
+		android:id="@+id/systemUiFragment"
+		android:name="sh.siava.pixelxpert.ui.fragments.SystemUiFragment" >
+		<action
+			app:enterAnim="@anim/nav_default_enter_anim"
+			app:exitAnim="@anim/nav_default_exit_anim"
+			app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+			app:popExitAnim="@anim/nav_default_pop_exit_anim"
+			android:id="@+id/action_systemUiFragment_to_quickSettingsFragment"
+			app:destination="@id/quickSettingsFragment" />
+		<action
+			app:enterAnim="@anim/nav_default_enter_anim"
+			app:exitAnim="@anim/nav_default_exit_anim"
+			app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+			app:popExitAnim="@anim/nav_default_pop_exit_anim"
+			android:id="@+id/action_systemUiFragment_to_statusbarFragment"
+			app:destination="@id/statusbarFragment" />
+	</fragment>
+	<fragment
+		android:id="@+id/appsCallsFragment"
+		android:name="sh.siava.pixelxpert.ui.fragments.AppsCallsFragment" >
+		<action
+			app:enterAnim="@anim/nav_default_enter_anim"
+			app:exitAnim="@anim/nav_default_exit_anim"
+			app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+			app:popExitAnim="@anim/nav_default_pop_exit_anim"
+			android:id="@+id/action_appsCallsFragment_to_packageManagerFragment"
+			app:destination="@id/packageManagerFragment" />
+		<action
+			app:enterAnim="@anim/nav_default_enter_anim"
+			app:exitAnim="@anim/nav_default_exit_anim"
+			app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+			app:popExitAnim="@anim/nav_default_pop_exit_anim"
+			android:id="@+id/action_appsCallsFragment_to_dialerFragment"
+			app:destination="@id/dialerFragment" />
+	</fragment>
 </navigation>

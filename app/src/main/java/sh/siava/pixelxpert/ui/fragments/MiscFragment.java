@@ -11,7 +11,7 @@ import sh.siava.pixelxpert.utils.TimeSyncScheduler;
 public class MiscFragment extends ControlledPreferenceFragmentCompat {
 	@Override
 	public String getTitle() {
-		return getString(R.string.misc_header);
+		return getString(R.string.system_hardware_title);
 	}
 
 	@Override

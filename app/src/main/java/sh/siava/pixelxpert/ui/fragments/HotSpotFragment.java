@@ -6,7 +6,7 @@ import sh.siava.pixelxpert.utils.ControlledPreferenceFragmentCompat;
 public class HotSpotFragment extends ControlledPreferenceFragmentCompat {
 	@Override
 	public String getTitle() {
-		return getString(R.string.hotspot_header);
+		return getString(R.string.connectivity_title);
 	}
 
 	@Override
