@@ -59,7 +59,7 @@ model. Builds/tests skipped locally this session; validated via CI push.
       (kept `app/lib/api-82*.jar` -- compileOnly Xposed API deps)
 - [x] Confirm CI green on `patch` after push (Fork Build run 27870238991, 3m0s, all steps green)
 
-### Phase 4: Custom Features (rolling) -- NEXT
+### Phase 4: Custom Features (rolling)
 - [x] **Force close in Recents menu** -- add a "Force close" entry to the task menu shown when tapping
       an app's title/icon on the Recents/Overview screen. Design is DONE (brainstormed + locked):
       see `docs/superpowers/specs/2026-06-20-recents-force-close-design.md`. Key facts: the menu lives
@@ -99,6 +99,14 @@ model. Builds/tests skipped locally this session; validated via CI push.
   these when syncing `canary`; resolve in favor of the fork's versions.
 - 2026-06-20: git history hygiene -- squash incidental fix/fixup commits into their logical
   working commit before the branch settles (force-push needs explicit confirmation).
+- 2026-06-21 (Session 3): recomposed the 8 fork commits above BASE `e90b9986` into 4 logical
+  commits (`fork:` tracking+CI, `build:` versioning+hygiene, `chore:` cleanup+fork metadata,
+  `feat:` Force close) via the git-rewrite skill, then force-pushed `patch`. This does NOT
+  contradict the Phase-3 "rewrite skipped to protect the canary mirror" note: only fork commits
+  ABOVE the upstream merge-base were rewritten -- `canary` and all upstream history at/below
+  `e90b9986` are untouched. The recomposed tree was verified byte-identical to the pre-rewrite tree.
+  (`patch` was subsequently rebased onto upstream's newer base commit, so the 4 commits' hashes
+  have changed from their post-recompose values -- the logical structure is unchanged.)
 
 ## Blockers
 <!-- none -->

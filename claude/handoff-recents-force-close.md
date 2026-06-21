@@ -1,5 +1,12 @@
 # Handoff: implement "Force close in Recents" (Phase 4)
 
+> **STATUS: COMPLETED 2026-06-21 (Session 3).** This handoff is fulfilled -- the feature is
+> implemented in `app/.../modpacks/launcher/RecentsForceClose.java` (toggle `RecentsForceCloseEnabled`,
+> string `recents_force_close_title`) and merged into `patch` as the `feat: add opt-in Force close
+> button to the Recents task menu` commit. Kept as a
+> historical record of the original scope/decisions; safe to delete. See `claude/progress.md` Phase 4
+> for the as-built summary.
+>
 > Written 2026-06-20 for a fresh-context agent. The cleanup work (Phase 1-3) is done and
 > CI-green on `patch`. This hands off the next feature: implementing Force close in Recents.
 

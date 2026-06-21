@@ -14,7 +14,7 @@ This is a mixed Xposed+Magisk module, which is made to allow customizations that
 
 > **Note (Fork):** This is a maintained fork of [siavash79/PixelXpert](https://github.com/siavash79/PixelXpert)
 > that carries a small set of custom features on top of upstream. The `canary` branch mirrors upstream;
-> custom work lives on the `patch` branch (the default branch here). See **Planned Features** below.
+> custom work lives on the `patch` branch (the default branch here). See **Fork Features** below.
 <hr>
 
 ### **Features:**
@@ -30,11 +30,12 @@ Currently, PixelXpert offers customizations on different aspects of system frame
 - Screen properties
 <hr>
 
-### **Planned Features (Fork):**
-Custom features this fork plans to add on top of upstream:
-- **Force close in Recents menu** -- add a "Force close" entry to the app menu that appears when tapping
+### **Fork Features:**
+Custom features this fork adds on top of upstream (each opt-in, default-off):
+- **Force close in Recents menu** -- adds a "Force close" entry to the app menu that appears when tapping
   an app's title in the Recents/Overview screen (alongside App info, Split screen, Pin, Pause app, etc.),
   so a running app can be force-stopped directly from Recents without going through App info > Force stop.
+  Enable it via the launcher settings toggle ("Add a Force close button to the recents task menu").
 <hr>
 
 ### **Compatibility:**
