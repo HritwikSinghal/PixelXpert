@@ -108,32 +108,59 @@ jobs:
           if-no-files-found: error
 
       # Publish a permanent, login-free Release with the zip + APK -- only for fork-v* tags.
+      # Notes = optional annotated-tag message (preamble) + an auto-generated changelog of
+      # the commits landed since the previous fork-v* tag.
       - name: Publish GitHub Release (tag builds only)
         if: startsWith(github.ref, 'refs/tags/fork-v')
         env:
           GH_TOKEN: ${{ github.token }}
           BASE: ${{ steps.stage.outputs.base }}
         run: |
-          # Release notes from the tag's own message ONLY for annotated tags. For a
-          # lightweight tag, %(contents) resolves to the underlying commit message, so fall
-          # back to generated notes instead of leaking an unrelated commit body.
-          NOTES="Automated fork build for ${GITHUB_REF_NAME}."
+          # Optional preamble: an annotated tag's own message, used ONLY for genuine
+          # annotated tags. For a lightweight tag, %(contents) resolves to the underlying
+          # commit message, so skip it rather than leak an unrelated commit body.
+          PREAMBLE=""
           if [ "$(git cat-file -t "${GITHUB_REF_NAME}")" = "tag" ]; then
-            TAG_MSG="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
-            [ -n "$TAG_MSG" ] && NOTES="$TAG_MSG"
+            PREAMBLE="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
           fi
-          # Idempotent publish: a re-run or a moved/re-pushed tag updates the existing
-          # Release's assets instead of failing on "release already exists".
+
+          # Previous fork-v* tag (the most recently created one that isn't this tag) bounds
+          # the changelog range. With none (the very first fork release) we cannot diff
+          # against a prior tag, so cap at the most recent commits to avoid dumping the
+          # entire inherited upstream history.
+          PREV_TAG="$(git tag -l 'fork-v*' --sort=-creatordate \
+            | grep -vxF "${GITHUB_REF_NAME}" | head -n1)"
+          LOG_ARGS=(--no-merges --pretty=format:'- %s (%h)')
+          if [ -n "$PREV_TAG" ]; then
+            LOG_ARGS+=("${PREV_TAG}..${GITHUB_REF_NAME}")
+            CHANGES_HEADER="## Changes since ${PREV_TAG}"
+          else
+            LOG_ARGS+=(-n 50 "${GITHUB_REF_NAME}")
+            CHANGES_HEADER="## Changes (most recent 50 commits)"
+          fi
+          CHANGELOG="$(git log "${LOG_ARGS[@]}")"
+          [ -n "$CHANGELOG" ] || CHANGELOG="- No code changes since ${PREV_TAG:-the start of history}."
+
+          # Assemble the notes file: preamble (if any), then the changelog section.
+          NOTES_FILE="$(mktemp)"
+          {
+            [ -n "$PREAMBLE" ] && printf '%s\n\n' "$PREAMBLE"
+            printf '%s\n\n%s\n' "$CHANGES_HEADER" "$CHANGELOG"
+          } > "$NOTES_FILE"
+
+          # Idempotent publish: a re-run or a moved/re-pushed tag refreshes the existing
+          # Release's assets AND notes instead of failing on "release already exists".
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             gh release upload "${GITHUB_REF_NAME}" \
               "dist/${BASE}.zip" \
               "dist/${BASE}.apk" \
               --clobber
+            gh release edit "${GITHUB_REF_NAME}" --notes-file "$NOTES_FILE"
           else
             gh release create "${GITHUB_REF_NAME}" \
               "dist/${BASE}.zip" \
               "dist/${BASE}.apk" \
               --title "${GITHUB_REF_NAME}" \
-              --notes "$NOTES" \
+              --notes-file "$NOTES_FILE" \
               --verify-tag
           fi
