@@ -96,7 +96,10 @@ public class StatusIconTuner extends XposedModPack {
 
 			((View)container).requestLayout();
 		}
-		catch (Throwable ignored){
+		catch (Throwable t){
+			// Field/layout access against the SystemUI icon container; if mIgnoredSlots moved or the
+			// container shape changed, icon-hiding silently stops working -- log so it's diagnosable.
+			logWarn("StatusIconTuner: failed to apply ignored icons", t);
 		}
 	}
 }

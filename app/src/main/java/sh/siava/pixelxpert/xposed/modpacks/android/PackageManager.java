@@ -103,7 +103,11 @@ public class PackageManager extends XposedModPack {
 							}
 						});
 
-			} catch (Throwable ignored) {
+			} catch (Throwable t) {
+				// These two hooks grant the launcher FORCE_STOP_PACKAGES (used by the recents force-close
+				// and nav-gesture kill) and suppress our broadcast permission check. If ActivityManagerService
+				// can't be resolved, both die silently -- log so a framework change is diagnosable.
+				logWarn("PackageManager: ActivityManagerService hooks not installed", t);
 			}
 
 			PackageManagerServiceUtilsClass
@@ -149,7 +153,11 @@ public class PackageManager extends XposedModPack {
 						} catch (Throwable ignored) {
 						}
 					});
-		} catch (Throwable ignored) {
+		} catch (Throwable t) {
+			// Wraps resolution of InstallPackageHelper / PackageManagerServiceUtils / SigningDetails and
+			// all the downgrade + signature-bypass hooks. A single renamed framework class kills every
+			// PackageManager feature at once -- log instead of swallowing.
+			logWarn("PackageManager: feature hooks not installed (framework class resolution failed)", t);
 		}
 	}
 }
