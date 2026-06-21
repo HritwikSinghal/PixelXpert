@@ -36,7 +36,20 @@ local.properties
 # Generated APK files
 /app/debug/
 /app/release/
+*.apk
+*.aab
 /crowdin.properties
 /ReleaseKey.properties
 /.kotlin
 /.idea/
+
+# CI staging / build outputs
+/dist/
+/output/
+
+# Design sources (not build inputs)
+*.psd
+
+# Dead committed PyTorch native libs (pulled from Maven instead; see app/build.gradle.kts).
+# Keep app/lib/api-82*.jar -- those are compileOnly Xposed API deps.
+app/lib/*/libpytorch_jni_lite.so

@@ -1,22 +1,20 @@
-### For Pixel Stock Android 12 and 13 (Up to Nov 2022 - AOSP 13R8):  
-[![Latest Release for A12 & A13 up to Nov 2022](https://img.shields.io/badge/Download-v2.4.1-blue)](https://github.com/siavash79/PixelXpert/releases/tag/v2.4.1)  
-
-### For Pixel Stock Android 13 (Dec 2022) to Android 16 (June 2025):  
-[![Latest Release A13 up to A16](https://img.shields.io/badge/Download-v4.3.0-blue)](https://github.com/siavash79/PixelXpert/releases/tag/v4.3.0)  
-
 ### For Pixel Stock Android 16 QPR1 and newer:  
-[![Latest Release](https://img.shields.io/github/v/release/siavash79/PixelXpert?color=green&include_prereleases&label=Download%20Latest%20Stable)](https://github.com/siavash79/PixelXpert/releases/latest)
-[![Latest Canary Release](https://img.shields.io/badge/Download%20Latest-Canary-blue)](https://github.com/siavash79/PixelXpert/releases/tag/canary_builds)
+[![Download Latest Build](https://img.shields.io/badge/Download-Latest%20Build-blue)](https://github.com/HritwikSinghal/PixelXpert/actions/workflows/forkBuild.yml)
 
-![Downloads - Stable channel](https://img.shields.io/github/downloads/siavash79/PixelXpert/total?color=red&label=Downloads%20-%20Stable%20Channel)
+Builds are downloadable as GitHub Actions artifacts named `PixelXpert-<branch>-<short7hash>.{zip,apk}`.
 
 
 
 [![Telegram URL](https://img.shields.io/badge/Telegram-Join-2CA5E?style=social&logo=telegram)](https://t.me/PixelXpert_Github)
 
-![Header Image](https://github.com/siavash79/PixelXpert/blob/canary/.github/PixelXpert_Banner_1280.jpg?raw=true)
+![Header Image](https://github.com/HritwikSinghal/PixelXpert/blob/patch/.github/PixelXpert_Banner_1280.jpg?raw=true)
 
 This is a mixed Xposed+Magisk module, which is made to allow customizations that are not originally designed in AOSP (Android Open Source Project). Please read thorough below before reaching to download links
+<hr>
+
+> **Note (Fork):** This is a maintained fork of [siavash79/PixelXpert](https://github.com/siavash79/PixelXpert)
+> that carries a small set of custom features on top of upstream. The `canary` branch mirrors upstream;
+> custom work lives on the `patch` branch (the default branch here). See **Planned Features** below.
 <hr>
 
 ### **Features:**
@@ -32,20 +30,25 @@ Currently, PixelXpert offers customizations on different aspects of system frame
 - Screen properties
 <hr>
 
+### **Planned Features (Fork):**
+Custom features this fork plans to add on top of upstream:
+- **Force close in Recents menu** -- add a "Force close" entry to the app menu that appears when tapping
+  an app's title in the Recents/Overview screen (alongside App info, Split screen, Pin, Pause app, etc.),
+  so a running app can be force-stopped directly from Recents without going through App info > Force stop.
+<hr>
+
 ### **Compatibility:**
 PixelXpert is ONLY compatible with pixel stock firmware on Google Pixel devices. Any custom ROM (including PE, PE plus, pixel plus ui and etc) or stock ROM outside stock pixel firmware on Google pixel devices (e.g. OneUI on Samsung, MIUI on Xiaomi and etc) is not supported and may not be fully (or even at all) compatible.
 
-Here is the compatibility chart according to different android versions and QPRs:
+Supported versions:
 
-- Android 12/12.1 and 13 (up to Nov 2022): [final version: v2.4.1](https://github.com/siavash79/PixelXpert/releases/tag/v2.4.1).
-- Android 13 stable QPR3 to Android 16 (June 2022): [final version: v.4.3.0](https://github.com/siavash79/PixelXpert/releases/tag/v4.3.0).
-- Android 16 stable QPR1 and newer: [latest stable version](https://github.com/siavash79/PixelXpert/releases/latest)
+- Android 16 QPR1 and newer
 <hr>
 
 ### **Prerequisites:**
 - Compatible ROM (see Compatibility text above)
 - Device Rooted with Magisk 24.2+ or KSU
-- LSPosed (Zygisk Version preferred) (For Android 14+ use [LSPosed fork by JingMatrix](https://github.com/JingMatrix/LSPosed/releases))
+- LSPosed (Zygisk Version preferred); on Android 16+ use the [LSPosed fork by JingMatrix](https://github.com/JingMatrix/LSPosed/releases)
 <hr>
 
 ### **How to install:**
@@ -61,10 +64,10 @@ P.S. For KSU, there is an extra step of granting root access to PixelXpert as it
 The module is also released in 2 flavors with different manual download and update procedures. But both can utilize automated updates through magisk manager, or through in-app updater (for canary, updates will not count against the module's download count).
 
 <ins>Stable release:</ins> 
-- Manual Install/Update: through repository's Github release page (link below) AND through in-app updater
+- Manual Install/Update: through the in-app updater, plus GitHub Actions artifacts from the fork's [Actions page](https://github.com/HritwikSinghal/PixelXpert/actions/workflows/forkBuild.yml)
 
 <ins>Canary release:</ins>
-- Manual Install/Update: through repository's Actions page and [telegram channel](https://t.me/PixelXpert_Github) (latest version is available from [here](https://github.com/siavash79/PixelXpert/releases/tag/canary_builds) also)
+- Manual Install/Update: through the in-app updater and the fork's [Actions page](https://github.com/HritwikSinghal/PixelXpert/actions/workflows/forkBuild.yml)
 
 *No matter which flavor you're on, you can always switch to the other one with in-app updater
 <hr>
