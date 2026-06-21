@@ -18,7 +18,7 @@ javapoet = "1.13.0"
 localbroadcastmanager = "1.1.0"
 lottie = "6.7.1"
 libsuVersion = "6.0.0"
-android-material = "1.14.0-alpha07"
+android-material = "1.13.0" # latest stable Material; 1.14.x is the alpha/expressive line. Verify before bumping.
 markdownviewAndroid = "1.1.1" #keep this version. higher versions are compose
 navigationFragmentKtx = "2.9.6"
 objenesis = "3.4"
@@ -28,11 +28,15 @@ playServicesBase = "18.10.0"
 playServicesMlkitSubjectSegmentation = "16.0.0-beta1"
 prdownloader = "1.0.2"
 #noinspection NewerVersionAvailable
+# PINNED INTENTIONALLY -- do not bump. PyTorch Android lite/torchvision > 1.13.1
+# pull in Compose transitively / are incompatible with this module's setup,
+# so this stays at 1.13.1 by design (not staleness). Shared by both
+# pytorch_android_lite and pytorch_android_torchvision_lite below.
 pytorch_android_torchvision_lite = "1.13.1"
 recyclerview = "1.4.0"
 preferenceKtx = "1.2.1"
 remotepreferences = "0.8"
-swiperefreshlayout = "1.2.0-rc01"
+swiperefreshlayout = "1.1.0" # last stable androidx.swiperefreshlayout (1.2.0 is still rc).
 transition = "1.6.0"
 uiGeometry = "1.10.6"
 workRuntime = "2.11.2"

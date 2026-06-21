@@ -49,7 +49,11 @@ android {
 			storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
 			storePassword = keystoreProperties.getProperty("storePassword")
 		}
-	} catch (_: Exception) {
+	} catch (e: Exception) {
+		// Graceful fallback: when ReleaseKey.properties is absent or unreadable
+		// (e.g. CI without the signing secret), keep building with the debug key.
+		// Log a warning so a genuine keystore misconfig stays diagnosable.
+		logger.warn("Release keystore not loaded (${e.message}); release build will fall back to debug signing.")
 	}
 
 	buildTypes {
@@ -63,7 +67,8 @@ android {
 			isDebuggable = true
 			isMinifyEnabled = false
 			isShrinkResources = false
-			signingConfig = releaseSigning
+			// Sign debug builds with AGP's default debug keystore, not the release key,
+			// so the release signing material never touches local/dev/CI debug artifacts.
 		}
 	}
 
@@ -109,18 +114,22 @@ androidComponents {
 			} catch (_ : Throwable){}
 		}
 
-		tasks.whenTaskAdded {
-			if (name.lowercase() == "assemble${variant.name.lowercase()}")
-			{
-				doLast {
-					artifactDir.get().asFile.listFiles()
-						.filter { it.extension == "apk" }
-						.forEach {
-							if (it.exists() && !it.name.equals(apkName)) {
-								it.renameTo(File(it.parent, apkName))
-							}
+		// Rename the variant's output APK to a stable PixelXpert.apk after assembly.
+		// Replaces the deprecated tasks.whenTaskAdded {}. tasks.matching{}.configureEach{}
+		// is the lazy, non-deprecated equivalent: it configures the assemble<Variant> task
+		// if/when it is registered. tasks.named(...) cannot be used here -- the assemble
+		// task does not yet exist during the onVariants configuration callback, so it would
+		// fail with "Task with name 'assembleDebug' not found".
+		val assembleTaskName = "assemble${variant.name.replaceFirstChar { it.uppercase() }}"
+		tasks.matching { it.name == assembleTaskName }.configureEach {
+			doLast {
+				artifactDir.get().asFile.listFiles()
+					.filter { it.extension == "apk" }
+					.forEach {
+						if (it.exists() && !it.name.equals(apkName)) {
+							it.renameTo(File(it.parent, apkName))
 						}
-				}
+					}
 			}
 		}
 	}

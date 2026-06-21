@@ -32,7 +32,7 @@ tasks.register<IncrementVersionTask>("incrementCanaryVersion") {
 		rootProject.file("MagiskModuleUpdate_Xposed.json"),
 		rootProject.file("MagiskModuleUpdate_Full.json")
 	)
-	targetVersionName.set(getVersionName())
+	// Canary names are derived from the incremented code inside the task; no name is passed in.
 }
 
 tasks.register<IncrementVersionTask>("incrementStableVersion") {
@@ -48,7 +48,8 @@ tasks.register<IncrementVersionTask>("incrementStableVersion") {
 		rootProject.file("MagiskModuleUpdate_Full.json"),
 		rootProject.file("MagiskModuleUpdate_Xposed.json"),
 	)
-	targetVersionName.set(getVersionName())
+	// Stable name comes from the latest git tag; resolved lazily via the value source.
+	stableName.set(providers.of(GitTagProvider::class.java) {})
 }
 
 tasks.register<Zip>("createZip") {
