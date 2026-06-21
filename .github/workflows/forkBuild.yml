@@ -116,12 +116,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BASE: ${{ steps.stage.outputs.base }}
         run: |
-          # Optional preamble: an annotated tag's own message, used ONLY for genuine
-          # annotated tags. For a lightweight tag, %(contents) resolves to the underlying
-          # commit message, so skip it rather than leak an unrelated commit body.
+          # actions/checkout doesn't reliably fetch the annotated tag OBJECT (only the commit it
+          # points to), so without this git would see a lightweight ref and skip the preamble.
+          git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}" 2>/dev/null || true
+          # Optional preamble: an annotated tag's own message, used ONLY for genuine annotated tags.
+          # For a lightweight tag, %(contents) resolves to the underlying commit message, so skip it.
+          # Use subject+body (not %(contents)) so a signed tag's PGP signature block never leaks into
+          # the notes.
           PREAMBLE=""
           if [ "$(git cat-file -t "${GITHUB_REF_NAME}")" = "tag" ]; then
-            PREAMBLE="$(git tag -l --format='%(contents)' "${GITHUB_REF_NAME}")"
+            PREAMBLE="$(git tag -l --format='%(contents:subject)%0a%0a%(contents:body)' "${GITHUB_REF_NAME}")"
           fi
 
           # Previous fork-v* tag (the most recently created one that isn't this tag) bounds
