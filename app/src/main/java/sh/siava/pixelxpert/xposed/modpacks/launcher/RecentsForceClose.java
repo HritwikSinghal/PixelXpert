@@ -128,7 +128,13 @@ public class RecentsForceClose extends XposedModPack {
 
 			// Gate injection on the task being resolvable so we never add a dead row, but resolve the
 			// task lazily at click time (below) so a reused menu/row never acts on a stale task.
-			if (resolveTask(menuView) == null) return;
+			// Log (don't silently return) when it can't be resolved: a launcher refactor of the
+			// task-holding internals is the most likely cause of a missing row, so make it visible.
+			if (resolveTask(menuView) == null) {
+				log(getClass().getSimpleName() + ": task unresolved on " + menuView.getClass().getName()
+						+ "; Force close row skipped (launcher internals may have shifted)");
+				return;
+			}
 
 			// Clone an existing row for native styling (background via constant state, like
 			// NotificationExpander). We build a fresh, simple row laid out like the template.
@@ -320,17 +326,32 @@ public class RecentsForceClose extends XposedModPack {
 	 */
 	private Object resolveTask(Object menuView) {
 		try {
-			// TaskMenuView path: a direct TaskView field whose getTask()/typed ".Task" field gives the task.
+			// Current launcher (A16+/A17): the menu exposes no-arg getTaskContainer()/getTaskView(), and
+			// the Task model lives on TaskContainer#getTask(). TaskView is now multi-task and no longer has
+			// getTask() -- so for the FromTaskView case (getTaskContainer() == null) reach the container via
+			// TaskView#getFirstTaskContainer(). All by-name and best-effort, so absent on older builds is a
+			// harmless null that falls through to the legacy paths below.
+			Object container = tryInvokeNoArg(menuView, "getTaskContainer");
+			if (container == null) {
+				Object tv = tryInvokeNoArg(menuView, "getTaskView");
+				if (tv != null) container = tryInvokeNoArg(tv, "getFirstTaskContainer");
+			}
+			if (container != null) {
+				Object task = tryInvokeNoArg(container, "getTask");
+				if (isTask(task)) return task;
+			}
+
+			// Legacy TaskMenuView path: a direct TaskView field whose getTask()/typed ".Task" field gives the task.
 			Object taskView = findTaskView(menuView);
 			if (taskView != null) {
 				Object task = tryInvokeNoArg(taskView, "getTask");
-				if (task != null) return task;
+				if (isTask(task)) return task;
 				task = findFieldValueByTypeName(taskView, ".Task");
-				if (task != null) return task;
+				if (isTask(task)) return task;
 			}
 
-			// Arrow-menu path: TaskMenuViewWithArrow holds no direct TaskView field -- the task sits behind
-			// a TaskContainer/TaskIdAttributeContainer holder that exposes getTask().
+			// Legacy arrow-menu path: TaskMenuViewWithArrow holds no direct TaskView field -- the task sits
+			// behind a TaskContainer/TaskIdAttributeContainer holder that exposes getTask().
 			Object holder = findTaskHolder(menuView);
 			if (holder != null) {
 				Object task = tryInvokeNoArg(holder, "getTask");
@@ -360,6 +381,18 @@ public class RecentsForceClose extends XposedModPack {
 	}
 
 	/**
+	 * True if {@code o} is a quickstep {@code TaskView} (or a subclass such as GroupedTaskView), checked
+	 * up the class hierarchy by simple/qualified name since the type is version-specific.
+	 */
+	private boolean isTaskView(Object o) {
+		if (!(o instanceof View)) return false;
+		for (Class<?> c = o.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+			if (c.getSimpleName().equals("TaskView") || c.getName().endsWith(".TaskView")) return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Finds an object held by the menu that exposes a no-arg {@code getTask()} -- the arrow menu's
 	 * TaskContainer/TaskIdAttributeContainer. Located by capability (has getTask) rather than by type
 	 * name, since the holder type is obfuscated/version-specific.
@@ -382,6 +415,11 @@ public class RecentsForceClose extends XposedModPack {
 	/** Finds the TaskView held by the menu instance, locating the field by type name. */
 	private Object findTaskView(Object menuView) {
 		try {
+			// Current launcher: the menu exposes a no-arg getTaskView() directly (TaskMenuView on A16+/A17
+			// reaches it through its TaskTarget field). Prefer it; null/absent on older builds falls through.
+			Object direct = tryInvokeNoArg(menuView, "getTaskView");
+			if (isTaskView(direct)) return direct;
+
 			if (mTaskViewFieldName != null) {
 				Field f = findField(menuView.getClass(), mTaskViewFieldName);
 				if (f != null) {
