@@ -170,6 +170,14 @@
 			android:title="@string/clear_all_reposition_title"
 			app:iconSpaceReserved="false" />
 
+		<sh.siava.pixelxpert.ui.preferences.MaterialSwitchPreference
+			android:defaultValue="false"
+			android:key="RecentsForceCloseEnabled"
+			android:summaryOff="@string/general_off"
+			android:summaryOn="@string/general_on"
+			android:title="@string/recents_force_close_title"
+			app:iconSpaceReserved="false" />
+
 	</sh.siava.pixelxpert.ui.preferences.MaterialPreferenceCategory>
 
 	<sh.siava.pixelxpert.ui.preferences.MaterialPreferenceCategory
