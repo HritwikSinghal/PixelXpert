@@ -40,6 +40,11 @@ hash-named artifacts, and upstream syncs stay low-friction.
 - [x] Compute short commit hash + branch; rename to `PixelXpert-<branch>-<short7>.{zip,apk}`
 - [x] Upload zip + APK as GitHub Actions artifacts
 - [x] Validate workflow (real run on `patch`) -- Fork Build green end-to-end (run 27870238991), builds zip + APK and uploads both
+- [x] Publish a GitHub Release on `fork-v*` tag pushes (2026-06-21, Session 4): added a tags
+      trigger + `contents: write` perm + a `gh release create` step (annotated-tag message as
+      notes) so tagged builds attach the zip + APK as permanent, login-free downloads. Everyday
+      `patch` pushes stay artifacts-only. SUPERSEDES the Phase-3 "no Release pollution" stance,
+      but only for intentional fork-v* tags.
 
 ### Phase 3: Repo & README Cleanup (2026-06-20)
 User opted for max cleanup (accepting upstream divergence) + repoint to fork. History
