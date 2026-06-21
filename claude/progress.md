@@ -1,5 +1,5 @@
 # Project: PixelXpert Fork Maintenance
-> Last updated: 2026-06-21 | Session: 7
+> Last updated: 2026-06-21 | Session: 8
 
 ## Overview
 This is a maintained fork of [siavash79/PixelXpert](https://github.com/siavash79/PixelXpert)
@@ -81,6 +81,19 @@ model. Builds/tests skipped locally this session; validated via CI push.
       click) so a launcher update can at worst omit the row. Compile-correctness verified against
       codebase APIs; runtime acceptance = green Fork Build CI + on-device checklist (closed-source
       quickstep, no in-repo test harness).
+      ON-DEVICE BUG + FIX (2026-06-21, Session 8, Pixel 10a `stallion`, Android 17, launcher
+      versionCode 907): row never appeared despite toggle ON. ROOT CAUSE (proven by pulling +
+      decompiling `NexusLauncherRelease.apk`, jadx + dexdump confirming REAL runtime names):
+      `injectForceCloseRow` ran (hook on `TaskMenuView#populateAndLayoutMenu` attaches fine) but died
+      SILENTLY at the `resolveTask() == null` gate. On A17 `TaskMenuView` no longer holds a `TaskView`
+      field nor any `getTask()`-holder -- the task is reached via a `TaskTarget taskTarget` field and the
+      menu's own private `getTaskView()` / `getTaskContainer()` methods; the `Task` model now lives on
+      `TaskContainer#getTask()` (TaskView is multi-task, `getTask()` removed -> `getFirstTaskContainer()`).
+      FIX: `resolveTask` now tries `menu.getTaskContainer().getTask()` (and TaskView#getFirstTaskContainer
+      fallback) first, `findTaskView` tries `menu.getTaskView()` first, both keeping the legacy field-scan
+      paths; added a log on the formerly-silent null-task gate so future drift is visible. Compiles
+      (`:app:compileDebugJavaWithJavac` BUILD SUCCESSFUL, JDK 17 + Android SDK). PENDING on-device verify:
+      flash, open Recents task menu, confirm "Force close" row appears + force-stops + dismisses tile.
 - [x] **Settings homepage entry placement** -- the injected "Pixel Xpert" top-level entry
       previously sat at the BOTTOM (own `PreferenceCategory`, `setOrder(9999)`) with a large gap.
       Moved it into the TOP services block alongside "Google services". File:
@@ -223,6 +236,41 @@ initialized). Commits `b72d4a54` (reorg) + `9aa71bca` (docs/audit).
 - [ ] Deferred (low value, needs a build): Clock/Battery-bar -> Appearance; Net-stats -> Connectivity;
       VoLTE left in `dialer_prefs.xml` (Apps & calls, to avoid the CallVibrator agent). Tracked in `tasks.md`.
 
+### Phase 6: App-wide diagnostic logging (2026-06-21, Session 8)
+Motivated by the silent-gate force-close bug: make any misbehaving feature reveal its root cause from
+logs alone. Plan: `~/.claude-personal/plans/federated-meandering-robin.md`. User-locked decisions:
+runtime verbose toggle (errors/hook-misses ALWAYS log), infra + top silent-catch hotspots (NOT a full
+172 sweep), external tooling only (no in-app log viewer). Both `:app:compileDebugJavaWithJavac` and
+`compileReleaseJavaWithJavac` BUILD SUCCESSFUL (JDK17 + Android SDK).
+- [x] **Leveled Logger + runtime verbose gate** (`utils/toolkit/Logger.java`): added
+      `logError/logWarn/logInfo` (always emit) + `logDebug/logVerbose` (gated by `verbose`), plus
+      `setVerbose/isVerbose`. Level is prefixed into the message (`"W/ ..."`) for portability. Legacy
+      `log(...)` overloads kept (map to INFO) so all ~100 existing call sites compile unchanged.
+- [x] **Systemic hook blind spots** (`utils/reflection/HookHelper.java`): `hookAllMethods` now WARNs
+      "Hook NOT installed: no method '<m>' on <class>" when zero methods match (the exact force-close
+      bug class, across all ~138 named hooks); `hookMethod` wraps the callback (`runCallback`) to
+      logError + rethrow on throw (visibility only, behavior unchanged). `ReflectedClass`: null-class
+      hook skip now WARNs; the dead `FLAG_DEBUG_HOOKS` replaced by `Logger.isVerbose()` so verbose mode
+      traces every hook install (class/method/match-count -> a `size = 0` flags a partial miss).
+- [x] **Lifecycle/pref logging**: `XPLauncher.loadModPack` logs the previously-swallowed load-time
+      `onPreferenceUpdated` failure (WARN), adds a verbose load trace, upgrades the failure dump to
+      logError. `XPrefs.loadEverything` syncs `Logger.setVerbose(verboseLogging)` -- single propagation
+      point, runs at load + every pref change in every hooked process.
+- [x] **Verbose pref UI**: default-OFF `verboseLogging` switch in a new "Diagnostics" category in
+      `misc_prefs.xml` (System & hardware umbrella -> already search-covered) + 3 strings. Live, no reboot.
+- [x] **Top silent-catch hotspots converted** (Category C only; Category A/B fallbacks left silent):
+      `CustomNavGestures` (saveFocusedTask + killForeground; also moved the "App Killed" toast to AFTER
+      a successful force-stop so it can't falsely confirm), `PackageManager` (the two structural catches
+      wrapping all hook registrations), `BatteryDataProvider` (log-once `warnNotInitialized` on the 5 read
+      accessors), `ScreenOffKeys` (pref-load body), `StatusIconTuner` (:99 ignored-icons; left :78 -- it's
+      an intentional exception-based QS/SB branch), `StatusbarMods` (initVoData), `KeyguardMods` (:451
+      outer run() catch), `DepthWallpaper` (:312 cache I/O; left :438 delete-cleanup). DELIBERATELY LEFT
+      SILENT: `StatusbarGestures` :157 (hot per-fling path) + :218 (version-fallback collapse signature),
+      KeyguardMods inner timing guards, PackageManager per-callback guards -- converting these would spam.
+- [ ] VERIFY on-device: flash, verbose OFF -> logcat quiet (errors/warns only); toggle ON (no reboot) ->
+      per-hook install traces + modpack-load lines appear; induce a deliberate hook miss -> WARN fires
+      even with verbose OFF. `adb logcat -s "PixelXpert Lsposed Module"`.
+
 ## Status Summary
 | Phase | Status | Progress |
 |-------|--------|----------|
@@ -231,6 +279,7 @@ initialized). Commits `b72d4a54` (reorg) + `9aa71bca` (docs/audit).
 | Phase 3: Repo & README Cleanup | Done | 7/7 |
 | Phase 4: Custom Features (rolling) | 4 done (1 pending verify), 5 not started | 4/9 (done: Force close, Settings entry placement, Flashlight-tile removal, [BUG] CallVibrator framework-retarget [CI/on-device verify pending]; pending: Reboot-inline, Updates-repoint, BT battery in statusbar, QS brightness slider, Hide launcher QSB search bar) |
 | Phase 5: Settings UI reorganization (Session 6) | Done | 7 umbrellas, Misc dissolved, assembleDebug green |
+| Phase 6: App-wide diagnostic logging (Session 8) | Code done (on-device verify pending) | leveled Logger + verbose toggle, hook-miss/callback logging, ~9 hotspot catches converted; debug+release compile green |
 | Post-Phase hardening (Session 5) | Done | build/CI/mod robustness commits, see Decisions |
 
 ## Decisions & Notes
