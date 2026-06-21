@@ -235,10 +235,7 @@
     <string name="friday">金曜日</string>
     <string name="saturday">土曜日</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">ライトの輝度タイル</string>
-    <string name="qs_flashlight_level_global_title">懐中電灯のレベルを全体的に変更</string>
     <string name="qs_tile_qty_title">クイック設定のタイルの数</string>
-    <string name="qs_leveled_flashlight_summary">タイルを長押ししてスライダーを表示します\nハードウェアが対応してある必要があります</string>
     <string name="qs_pulldown_size">クイックプルダウンの幅</string>
     <string name="qs_pulldown_switch_title">ステータスバーからクイック設定をプルダウン</string>
     <string name="qs_pulldown_side_title">クイックプルダウンの側面</string>

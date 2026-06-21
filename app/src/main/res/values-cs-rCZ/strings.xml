@@ -235,10 +235,7 @@
     <string name="friday">pátek</string>
     <string name="saturday">sobota</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Flashlight-leveled tile</string>
-    <string name="qs_flashlight_level_global_title">Použijte úroveň baterky globálně</string>
     <string name="qs_tile_qty_title">Rychlé nastavení nastavení počtu dlaždic</string>
-    <string name="qs_leveled_flashlight_summary">Longpress on tile to show the slider.\nRequires supported hardware</string>
     <string name="qs_pulldown_size">Rychlá stahovací šířka</string>
     <string name="qs_pulldown_switch_title">Rychlé stahování panelu QS ze stavového řádku</string>
     <string name="qs_pulldown_side_title">Rychlá stahovací strana</string>

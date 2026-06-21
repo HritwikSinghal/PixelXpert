@@ -235,10 +235,7 @@
     <string name="friday">Piątek</string>
     <string name="saturday">Sobota</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Flashlight-leveled tile</string>
-    <string name="qs_flashlight_level_global_title">Zastosuj poziom latarki globalnie</string>
     <string name="qs_tile_qty_title">Szybkie ustawienia Ustawienia liczby płytek</string>
-    <string name="qs_leveled_flashlight_summary">Longpress on tile to show the slider.\nRequires supported hardware</string>
     <string name="qs_pulldown_size">Szerokość szybkiego opuszczania</string>
     <string name="qs_pulldown_switch_title">Szybkie rozwijanie panelu QS z paska stanu</string>
     <string name="qs_pulldown_side_title">Strona szybkiego opuszczania</string>

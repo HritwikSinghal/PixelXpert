@@ -175,9 +175,6 @@ public class PreferenceHelper {
 			case "oneFingerPullupEnabled":
 				return instance.mPreferences.getBoolean("QSPullodwnEnabled", false);
 
-			case "isFlashLevelGlobal":
-				return instance.mPreferences.getBoolean("leveledFlashTile", false);
-
 			case "BackLeftHeight":
 				return instance.mPreferences.getBoolean("BackFromLeft", true);
 

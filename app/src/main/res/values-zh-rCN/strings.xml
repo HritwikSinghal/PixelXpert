@@ -235,10 +235,7 @@
     <string name="friday">周五</string>
     <string name="saturday">周六</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">闪光灯级别的磁贴</string>
-    <string name="qs_flashlight_level_global_title">全局应用手电筒亮度</string>
     <string name="qs_tile_qty_title">磁贴面板数量设定</string>
-    <string name="qs_leveled_flashlight_summary">长按瓷块显示滑动条\n 需要硬件支持</string>
     <string name="qs_pulldown_size">快速下拉磁贴面板</string>
     <string name="qs_pulldown_switch_title">快速下拉磁贴面板</string>
     <string name="qs_pulldown_side_title">快速下拉宽度</string>

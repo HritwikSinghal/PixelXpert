@@ -344,16 +344,7 @@ public class SystemUtils {
 				return;
 			}
 
-			if (Xprefs.getBoolean("leveledFlashTile", false)
-					&& Xprefs.getBoolean("isFlashLevelGlobal", false)
-					&& supportsFlashLevelsInternal()) {
-				float currentPct = Xprefs.getInt("flashPCT", 50) / 100f;
-
-				setFlashInternalWithLevel(enabled, getFlashlightLevelInternal(currentPct), animate);
-			}
-			else {
-				setFlashInternalNoLevel(enabled, animate);
-			}
+			setFlashInternalNoLevel(enabled, animate);
 		} catch (Throwable t) {
 			if (BuildConfig.DEBUG) {
 				log("PixelXpert Error in setting flashlight");

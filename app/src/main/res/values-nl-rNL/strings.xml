@@ -235,10 +235,7 @@
     <string name="friday">Vrijdag</string>
     <string name="saturday">Zaterdag</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Flashlight-leveled tile</string>
-    <string name="qs_flashlight_level_global_title">Zaklampniveau globaal toepassen</string>
     <string name="qs_tile_qty_title">Snelle instellingen Instellingen voor het tellen van tegels</string>
-    <string name="qs_leveled_flashlight_summary">Longpress on tile to show the slider.\nRequires supported hardware</string>
     <string name="qs_pulldown_size">Snel naar beneden trekkende breedte</string>
     <string name="qs_pulldown_switch_title">Snel QS-paneel naar beneden trekken vanuit de statusbalk</string>
     <string name="qs_pulldown_side_title">Snel naar beneden trekkende kant</string>

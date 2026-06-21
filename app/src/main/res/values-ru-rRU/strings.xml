@@ -235,10 +235,7 @@
     <string name="friday">Пятница</string>
     <string name="saturday">Суббота</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Плитка яркости фонарика</string>
-    <string name="qs_flashlight_level_global_title">Применить уровень яркости глобально</string>
     <string name="qs_tile_qty_title">Настройки быстрых настроек счетчик плиток</string>
-    <string name="qs_leveled_flashlight_summary">Удерживайте плитку для показа слайдера.\nТребует поддерживаемое оборудование</string>
     <string name="qs_pulldown_size">Ширина быстрого вытягивания</string>
     <string name="qs_pulldown_switch_title">Быстрое вытягивание панели быстрых настроек из строки состояния</string>
     <string name="qs_pulldown_side_title">Сторона быстрого вытягивания</string>

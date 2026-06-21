@@ -235,10 +235,7 @@
     <string name="friday">금요일</string>
     <string name="saturday">토요일</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Flashlight-leveled tile</string>
-    <string name="qs_flashlight_level_global_title">손전등 밝기 전역 설정</string>
     <string name="qs_tile_qty_title">빠른 설정 타일 배치 설정</string>
-    <string name="qs_leveled_flashlight_summary">Longpress on tile to show the slider.\nRequires supported hardware</string>
     <string name="qs_pulldown_size">바로 열기 영역 너비</string>
     <string name="qs_pulldown_switch_title">상태 표시줄로부터 빠른 설정 바로 열기</string>
     <string name="qs_pulldown_side_title">바로 열기 영역 위치</string>
