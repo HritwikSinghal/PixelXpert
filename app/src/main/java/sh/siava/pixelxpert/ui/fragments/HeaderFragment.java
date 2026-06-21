@@ -84,9 +84,9 @@ public class HeaderFragment extends ControlledPreferenceFragmentCompat {
 		searchItems = new SearchPreferenceItem[]{
 				new SearchPreferenceItem(R.xml.dialer_prefs, R.string.dialer_header, R.id.action_searchPreferenceFragment_to_dialerFragment),
 				new SearchPreferenceItem(R.xml.gesture_nav_prefs, R.string.gesturenav_header, R.id.action_searchPreferenceFragment_to_gestureNavFragment),
-				new SearchPreferenceItem(R.xml.hotspot_prefs, R.string.hotspot_header, R.id.action_searchPreferenceFragment_to_hotSpotFragment),
-				new SearchPreferenceItem(R.xml.lock_screen_prefs, R.string.lockscreen_header_title, R.id.action_searchPreferenceFragment_to_lockScreenFragment),
-				new SearchPreferenceItem(R.xml.misc_prefs, R.string.misc_header, R.id.action_searchPreferenceFragment_to_miscFragment),
+				new SearchPreferenceItem(R.xml.hotspot_prefs, R.string.connectivity_title, R.id.action_searchPreferenceFragment_to_hotSpotFragment),
+				new SearchPreferenceItem(R.xml.lock_screen_prefs, R.string.lock_security_title, R.id.action_searchPreferenceFragment_to_lockScreenFragment),
+				new SearchPreferenceItem(R.xml.misc_prefs, R.string.system_hardware_title, R.id.action_searchPreferenceFragment_to_miscFragment),
 				new SearchPreferenceItem(R.xml.nav_prefs, R.string.nav_header, R.id.action_searchPreferenceFragment_to_navFragment),
 				new SearchPreferenceItem(R.xml.sbqs_network_prefs, R.string.ntsb_category_title, R.id.action_searchPreferenceFragment_to_networkFragment),
 				new SearchPreferenceItem(R.xml.lsqs_custom_text, R.string.netstat_header, R.id.action_searchPreferenceFragment_to_networkStatFragment),
@@ -99,8 +99,9 @@ public class HeaderFragment extends ControlledPreferenceFragmentCompat {
 				new SearchPreferenceItem(R.xml.statusbar_clock_prefs, R.string.sbc_header, R.id.action_searchPreferenceFragment_to_SBCFragment2),
 				new SearchPreferenceItem(R.xml.sleep_on_flat_prefs, R.string.sleep_on_flat_screen_title, R.id.action_searchPreferenceFragment_to_sleepOnFlatFragment),
 				new SearchPreferenceItem(R.xml.statusbar_settings, R.string.statusbar_header, R.id.action_searchPreferenceFragment_to_statusbarFragment),
+				new SearchPreferenceItem(R.xml.system_ui_prefs, R.string.systemui_title, R.id.action_searchPreferenceFragment_to_systemUiFragment),
 				new SearchPreferenceItem(R.xml.taskbar_prefs, R.string.taskbar_header_title, R.id.action_searchPreferenceFragment_to_taskbarNavFragment),
-				new SearchPreferenceItem(R.xml.theming_prefs, R.string.theme_customization_category, R.id.action_searchPreferenceFragment_to_themingFragment),
+				new SearchPreferenceItem(R.xml.theming_prefs, R.string.appearance_title, R.id.action_searchPreferenceFragment_to_themingFragment),
 				new SearchPreferenceItem(R.xml.three_button_prefs, R.string.threebutton_header_title, R.id.action_searchPreferenceFragment_to_threeButtonNavFragment),
 		};
 	}

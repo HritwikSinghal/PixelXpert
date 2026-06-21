@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:search="http://schemas.android.com/apk/sh.siava.pixelxpert.ui.preferencesearch">
+
+	<sh.siava.pixelxpert.ui.preferences.IllustrationPreference
+		android:key="apps_calls_illustration"
+		app:lottie_rawRes="@raw/package_manager"
+		search:ignore="true" />
+
+	<sh.siava.pixelxpert.ui.preferences.MaterialPreference
+		android:key="pm_header"
+		android:summary="@string/pm_header_summary"
+		android:title="@string/pm_header"
+		app:fragment="sh.siava.pixelxpert.ui.fragments.PackageManagerFragment"
+		app:iconSpaceReserved="false" />
+
+	<sh.siava.pixelxpert.ui.preferences.MaterialPreference
+		android:key="dialer_header"
+		android:summary="@string/dialer_header_summary"
+		android:title="@string/dialer_header"
+		app:fragment="sh.siava.pixelxpert.ui.fragments.DialerFragment"
+		app:iconSpaceReserved="false" />
+</PreferenceScreen>
