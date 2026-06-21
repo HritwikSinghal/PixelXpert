@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -139,7 +140,7 @@ public class RecentsForceClose extends XposedModPack {
 			// Clone an existing row for native styling (background via constant state, like
 			// NotificationExpander). We build a fresh, simple row laid out like the template.
 			View template = optionsContainer.getChildAt(optionsContainer.getChildCount() - 1);
-			View row = buildRow(template);
+			View row = buildRow(template, optionsContainer);
 			if (row == null) return;
 
 			row.setTag(ROW_TAG);
@@ -190,16 +191,29 @@ public class RecentsForceClose extends XposedModPack {
 	}
 
 	/**
-	 * Builds a "Force close" row styled after the supplied template row. The background drawable is
-	 * cloned from the template (constant-state copy, as in NotificationExpander); the label uses the
-	 * module's {@code recents_force_close_label} string and the {@code ic_close} drawable.
+	 * Builds a "Force close" row styled after the supplied template row.
+	 *
+	 * <p>Preferred path: re-inflate the EXACT layout the native option rows were inflated from (via
+	 * {@link View#getSourceLayoutResId()}, API 29+) and set only our label + icon onto it. The row
+	 * then inherits the launcher's own height, padding, margins, icon sizing, typography and
+	 * background, so it is visually indistinguishable from a native entry across launcher versions.
+	 * Fallback (template wasn't inflated / pre-29): manually mirror the template's styling.
 	 */
-	private View buildRow(View template) {
+	private View buildRow(View template, ViewGroup parent) {
 		try {
 			// Short button label ("Force close"); recents_force_close_title is the settings subtitle.
 			final CharSequence label = XPLauncher.moduleResources.getString(R.string.recents_force_close_label);
+			// Plain X (ic_cross) matches the native "Clear" glyph; ic_close is a circled X that
+			// stands out against the launcher's line icons.
 			final Drawable icon = ResourcesCompat.getDrawable(
-					XPLauncher.moduleResources, R.drawable.ic_close, mContext.getTheme());
+					XPLauncher.moduleResources, R.drawable.ic_cross, mContext.getTheme());
+
+			// Best fidelity: clone the native row's own layout and just relabel it.
+			View nativeClone = inflateFromTemplate(template, parent);
+			if (nativeClone != null) {
+				applyLabelAndIcon(nativeClone, label, icon);
+				return nativeClone;
+			}
 
 			// If the template is itself a row group with a label/icon, mirror it for native fidelity.
 			if (template instanceof ViewGroup) {
@@ -290,6 +304,61 @@ public class RecentsForceClose extends XposedModPack {
 		catch (Throwable t) {
 			log(getClass().getSimpleName() + ": failed to build Force close row", t);
 			return null;
+		}
+	}
+
+	/**
+	 * Re-inflates the layout the {@code template} row was itself inflated from, so our row is an
+	 * exact structural copy of a native option row. Inflated with {@code parent} (attachToRoot=false)
+	 * so it adopts the native row LayoutParams (incl. margins). Returns null when the source layout id
+	 * is unavailable (template not inflated, or pre-API-29), letting the caller fall back to manual styling.
+	 */
+	private View inflateFromTemplate(View template, ViewGroup parent) {
+		try {
+			int layoutId = template.getSourceLayoutResId();
+			if (layoutId == 0 || layoutId == View.NO_ID) return null;
+			return LayoutInflater.from(template.getContext()).inflate(layoutId, parent, false);
+		}
+		catch (Throwable t) {
+			log(getClass().getSimpleName() + ": native row re-inflation failed; using manual styling", t);
+			return null;
+		}
+	}
+
+	/**
+	 * Sets our label + icon onto a freshly cloned native row without disturbing its native styling.
+	 * Handles both row shapes: a separate icon {@link ImageView}, or (DeepShortcut-style) the icon
+	 * carried as a start compound drawable on the label {@link TextView}. The icon is tinted to the
+	 * row's text color so it follows the launcher theme.
+	 */
+	private void applyLabelAndIcon(View row, CharSequence label, Drawable icon) {
+		TextView text = (row instanceof TextView)
+				? (TextView) row
+				: (row instanceof ViewGroup ? findFirstTextView((ViewGroup) row) : null);
+		if (text != null) text.setText(label);
+
+		if (icon != null && text != null) {
+			try { icon.setTint(text.getCurrentTextColor()); }
+			catch (Throwable ignored) {}
+		}
+
+		ImageView iconView = (row instanceof ViewGroup) ? findFirstImageView((ViewGroup) row) : null;
+		if (iconView != null) {
+			iconView.setImageDrawable(icon);
+			return;
+		}
+
+		// No dedicated icon view: the native row draws its glyph as a start compound drawable. Match
+		// the existing compound drawable's bounds when present so our icon is sized exactly like native.
+		if (text != null && icon != null) {
+			Drawable[] existing = text.getCompoundDrawablesRelative();
+			Drawable sample = existing.length > 0 ? existing[0] : null;
+			if (sample != null && sample.getBounds().width() > 0) {
+				icon.setBounds(sample.getBounds());
+				text.setCompoundDrawablesRelative(icon, null, null, null);
+			} else {
+				text.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
+			}
 		}
 	}
 
