@@ -53,3 +53,8 @@ local.properties
 # Dead committed PyTorch native libs (pulled from Maven instead; see app/build.gradle.kts).
 # Keep app/lib/api-82*.jar -- those are compileOnly Xposed API deps.
 app/lib/*/libpytorch_jni_lite.so
+
+# Nix
+/result
+/result-*
+.direnv/
