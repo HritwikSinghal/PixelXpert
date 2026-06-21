@@ -1,5 +1,5 @@
 # Project: PixelXpert Fork Maintenance
-> Last updated: 2026-06-21 | Session: 3
+> Last updated: 2026-06-21 | Session: 4
 
 ## Overview
 This is a maintained fork of [siavash79/PixelXpert](https://github.com/siavash79/PixelXpert)
@@ -76,6 +76,20 @@ model. Builds/tests skipped locally this session; validated via CI push.
       click) so a launcher update can at worst omit the row. Compile-correctness verified against
       codebase APIs; runtime acceptance = green Fork Build CI + on-device checklist (closed-source
       quickstep, no in-repo test harness).
+- [x] **Settings homepage entry placement** -- the injected "Pixel Xpert" top-level entry
+      previously sat at the BOTTOM (own `PreferenceCategory`, `setOrder(9999)`) with a large gap.
+      Moved it into the TOP services block alongside "Google services". File:
+      `app/src/main/java/sh/siava/pixelxpert/xposed/modpacks/settings/PXSettingsLauncher.java`.
+      Approach (new-settings/A16 path): in the `onCreateAdapter` before-hook, DFS the
+      PreferenceScreen for the top services tile by key substring (`google`/`microg`/`gms` --
+      microG-compatible), then add our entry to that tile's PARENT group with a matching
+      `order` so a tie keeps it adjacent INSIDE the same rounded card. Fallback when the tile
+      isn't found (not loaded / unknown key): pin our own block to the top via `order=-1000`
+      (was 9999). Added dedupe guard (entry tagged key `pixelxpert_top_level`, skip if already
+      present) to avoid duplicate inserts on adapter rebuilds. IMPLEMENTED 2026-06-21 (Session 4).
+      NOT YET compiled/flashed -- `gradlew` not executable in this env. Key assumption to verify
+      on-device: the services tile's preference key actually contains one of those needles; if
+      not, it silently uses the top-pinned fallback (still "at top", just its own card).
 <!-- Append one task per feature as they are requested. Each feature = an isolated,
      easily-rebasable change set on `patch`. -->
 
@@ -85,7 +99,7 @@ model. Builds/tests skipped locally this session; validated via CI push.
 | Phase 1: Fork Tracking & Branch Strategy | Done | 6/6 |
 | Phase 2: Fork Build CI | Done | 8/8 |
 | Phase 3: Repo & README Cleanup | Done | 7/7 |
-| Phase 4: Custom Features (rolling) | Impl done, CI/on-device pending | 1/1 (Force close implemented) |
+| Phase 4: Custom Features (rolling) | Impl done, CI/on-device pending | 2/2 (Force close, Settings entry placement) |
 
 ## Decisions & Notes
 - 2026-06-20: Branch model = `canary` mirrors upstream, `patch` (new default) carries custom work.
