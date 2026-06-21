@@ -17,6 +17,15 @@ import org.gradle.api.tasks.TaskAction
  * stable builds.
  */
 abstract class IncrementVersionTask : DefaultTask() {
+	init {
+		// This task is side-effecting (it bumps the version and stamps metadata) but its declared
+		// inputs/outputs would otherwise let Gradle treat it as up-to-date or fetch a stale result
+		// from the build cache -- with org.gradle.build-cache + configuration-cache enabled, the bump
+		// could be skipped entirely and the APK would ship the previous version. Force it to always
+		// run so every build advances and stamps the current version.
+		outputs.upToDateWhen { false }
+	}
+
 	@get:InputFile
 	abstract val versionFile: RegularFileProperty
 

@@ -26,6 +26,28 @@ data class VersionInfo(val code: Int, val name: String)
 private const val PROP_VERSION_CODE = "VERSION_CODE"
 private const val PROP_VERSION_NAME = "VERSION_NAME"
 
+/**
+ * Baseline VERSION_CODE used when the key is missing from version.properties entirely.
+ * Shared by the read and increment paths so a fresh checkout (no version.properties yet) bumps to the
+ * same first value regardless of which path runs first. Previously the read path defaulted to "1" and
+ * the increment path to "0", so a missing key produced inconsistent codes (read saw 1, increment
+ * produced 0+1=1 -- coincidentally equal, but the divergent defaults were a latent bug).
+ */
+private const val DEFAULT_VERSION_CODE = 0
+
+/**
+ * Parses VERSION_CODE from already-loaded [props], failing loudly on a present-but-malformed value.
+ * `Properties.getProperty(key, default)` only applies the default when the KEY is absent; a present
+ * key with a blank/garbage value would slip past it and then blow up with an opaque
+ * NumberFormatException deep inside `toInt()`. We trim and use toIntOrNull so the error names the file
+ * and the offending value.
+ */
+private fun parseVersionCode(props: Properties, versionFile: File): Int {
+    val raw = props.getProperty(PROP_VERSION_CODE) ?: return DEFAULT_VERSION_CODE
+    return raw.trim().toIntOrNull()
+        ?: error("Invalid $PROP_VERSION_CODE in ${versionFile.absolutePath}: \"$raw\" is not an integer.")
+}
+
 /** Canary names are purely derived from the code, so they are always reproducible. */
 fun canaryVersionName(versionCode: Int): String = "canary-$versionCode"
 
@@ -39,7 +61,7 @@ fun readCurrentVersion(versionFile: File, isStable: Boolean, stableName: String?
     if (versionFile.exists()) {
         versionFile.inputStream().use { props.load(it) }
     }
-    val code = props.getProperty(PROP_VERSION_CODE, "1").toInt()
+    val code = parseVersionCode(props, versionFile)
     val name = if (isStable) {
         requireNotNull(stableName) { "Stable builds require a git-tag version name." }
     } else {
@@ -89,7 +111,11 @@ fun incrementVersionLogic(
         versionFile.inputStream().use { props.load(it) }
     }
 
-    val currentCode = props.getProperty(PROP_VERSION_CODE, "0").toInt()
+    // Same parse contract as the read path: a present-but-malformed VERSION_CODE fails loudly
+    // (naming the file and value) instead of throwing an opaque NumberFormatException, and a
+    // missing key falls back to the SHARED DEFAULT_VERSION_CODE baseline so read and increment
+    // never disagree on the first value for a fresh checkout.
+    val currentCode = parseVersionCode(props, versionFile)
     // Stable keeps its code (the git tag drives the name); canary advances by one.
     val nextCode = if (isStable) currentCode else currentCode + 1
     val nextName = if (isStable) {
@@ -111,7 +137,16 @@ fun incrementVersionLogic(
 
 /** Dispatches to the correct format-aware writer based on file extension. */
 private fun writeVersionToFile(file: File, version: VersionInfo) {
-    if (!file.exists()) return
+    if (!file.exists()) {
+        // Previously a silently-skipped missing file. A listed-but-absent metadata file is almost
+        // always a stale reference (a renamed/deleted descriptor) and silently skipping it means the
+        // file never gets the version stamp and nobody notices. Warn loudly to stderr (Gradle
+        // surfaces task stderr) instead of swallowing it, so dead references are visible in CI logs.
+        System.err.println(
+            "WARNING: version metadata file not found, skipping stamp: ${file.absolutePath}"
+        )
+        return
+    }
     when (file.extension.lowercase()) {
         "json" -> writeVersionToJson(file, version)
         "prop" -> writeVersionToProp(file, version)
@@ -125,14 +160,25 @@ private fun writeVersionToFile(file: File, version: VersionInfo) {
  * the fork's updateJson URL) is preserved verbatim.
  */
 private fun writeVersionToProp(file: File, version: VersionInfo) {
-    val updated = file.readText().lineSequence().map { line ->
+    // Rewrite line-by-line but preserve the file's EXACT byte shape otherwise: keep the original
+    // line terminator (CRLF vs LF) and the presence/absence of a trailing newline. lineSequence()
+    // + joinToString("\n") silently normalized CRLF -> LF and dropped a trailing newline, mutating
+    // unrelated bytes and producing noisy diffs / potential tooling churn. We split on the original
+    // terminator and re-join with it so only the two value lines change.
+    val original = file.readText()
+    val terminator = if (original.contains("\r\n")) "\r\n" else "\n"
+    val hadTrailingNewline = original.endsWith("\n")
+    // Strip a single trailing terminator before splitting so we don't emit a spurious empty final
+    // element; we re-append it below only if it was there originally.
+    val body = original.removeSuffix("\r\n").removeSuffix("\n")
+    val updated = body.split(terminator).joinToString(terminator) { line ->
         when {
             line.startsWith("version=") -> "version=${version.name}"
             line.startsWith("versionCode=") -> "versionCode=${version.code}"
             else -> line
         }
-    }.joinToString("\n")
-    file.writeText(updated)
+    }
+    file.writeText(if (hadTrailingNewline) updated + terminator else updated)
 }
 
 /**
