@@ -1,0 +1,190 @@
+name: Fork Build
+
+# Fork-only CI.
+#  - Push to `patch`: build the flashable Magisk zip + APK and upload them as Actions artifacts
+#    named PixelXpert-<ref>-<short7hash>.{zip,apk}. Nothing is committed or published.
+#  - Manual run (workflow_dispatch, "Run workflow" on `patch`): cut a RELEASE. Upstream's
+#    versioning bumps CANARY_VERSION_CODE and stamps module.prop + the update JSONs; this job
+#    commits those bumped files back to `patch`, tags the commit `canary-<N>`, and publishes a
+#    GitHub Release carrying PixelXpertFork-canary-<N>.zip (the exact name the update JSONs'
+#    zipUrl points at) plus the APK. Committing the bump is what makes Magisk/KSU and the in-app
+#    updater see the new version.
+# Unlike upstream's workflows (disabled in this repo's Actions), this checks out the fork's own
+# code. Releases require the SIGNING_KEY secret: a debug-signed public APK would have a
+# different cert and break every later update (INSTALL_FAILED_UPDATE_INCOMPATIBLE). Branch
+# builds without the secret fall back to debug signing so they stay green.
+
+on:
+  push:
+    branches:
+      - 'patch'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  # Supersede in-progress branch (artifact-only) builds, but never cancel a release run:
+  # cancelling mid-publish can leave a pushed tag without its Release assets.
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Needed by the release path to push the version commit + tag and create the Release.
+    permissions:
+      contents: write
+
+    env:
+      IS_RELEASE: ${{ github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Refuse releases from other branches
+        if: env.IS_RELEASE == 'true' && github.ref != 'refs/heads/patch'
+        run: |
+          echo "::error::Releases are cut from 'patch' only (got ${GITHUB_REF})."
+          exit 1
+
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: JDK 21 Setup
+        uses: actions/setup-java@v5.2.0
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Gradlew Permissions
+        run: chmod +x gradlew
+
+      - name: Signature files preparation
+        # Secrets are passed via env (not inline ${{ }} interpolation) and quoted, so a key
+        # containing shell-special characters is decoded intact and never hits the command line.
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          if [ -n "$SIGNING_KEY" ]; then
+            {
+              echo "storePassword=$KEY_STORE_PASSWORD"
+              echo "keyAlias=$ALIAS"
+              echo "keyPassword=$KEY_PASSWORD"
+              echo "storeFile=$WORKSPACE/ReleaseKey.jks"
+            } >> ReleaseKey.properties
+            printf '%s' "$SIGNING_KEY" | base64 --decode > "$WORKSPACE/ReleaseKey.jks"
+          elif [ "$IS_RELEASE" = "true" ]; then
+            echo "::error::SIGNING_KEY secret is required for release builds; aborting."
+            exit 1
+          else
+            echo "No SIGNING_KEY secret set -- release build will fall back to debug signing."
+          fi
+
+      - name: Gradle Build
+        run: ./gradlew buildCanary -Pchannel=canary
+
+      - name: Read the bumped version
+        id: ver
+        run: |
+          NAME="$(grep -E '^CANARY_VERSION_NAME=' version.properties | cut -d= -f2)"
+          CODE="$(grep -E '^CANARY_VERSION_CODE=' version.properties | cut -d= -f2)"
+          ZIP="output/PixelXpertFork-${NAME}.zip"
+          APK="app/build/outputs/apk/release/PixelXpert.apk"
+          [ -n "$NAME" ] && [ -n "$CODE" ] || { echo "::error::could not read CANARY_VERSION_* from version.properties"; exit 1; }
+          [ -f "$ZIP" ] || { echo "::error::expected $ZIP was not produced"; ls -l output || true; exit 1; }
+          [ -f "$APK" ] || { echo "::error::expected $APK was not produced"; exit 1; }
+          # The zip's module.prop must describe the same version, or Magisk/KSU and the app disagree.
+          unzip -p "$ZIP" module.prop | grep -qx "versionCode=${CODE}" \
+            || { echo "::error::module.prop inside $ZIP is not versionCode=${CODE}"; exit 1; }
+          {
+            echo "name=${NAME}"
+            echo "code=${CODE}"
+            echo "zip=${ZIP}"
+            echo "apk=${APK}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Built ${NAME} (${CODE})"
+
+      - name: Stage hash-named artifacts
+        id: stage
+        env:
+          ZIP: ${{ steps.ver.outputs.zip }}
+          APK: ${{ steps.ver.outputs.apk }}
+        run: |
+          SHORT="$(git rev-parse --short=7 HEAD)"
+          BASE="PixelXpert-${GITHUB_REF_NAME}-${SHORT}"
+          mkdir -p dist
+          cp "$ZIP" "dist/${BASE}.zip"
+          cp "$APK" "dist/${BASE}.apk"
+          echo "base=${BASE}" >> "$GITHUB_OUTPUT"
+          ls -l dist
+
+      - name: Upload Magisk zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.stage.outputs.base }}-zip
+          path: dist/${{ steps.stage.outputs.base }}.zip
+          if-no-files-found: error
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.stage.outputs.base }}-apk
+          path: dist/${{ steps.stage.outputs.base }}.apk
+          if-no-files-found: error
+
+      - name: Commit version bump and tag (release only)
+        if: env.IS_RELEASE == 'true'
+        env:
+          NAME: ${{ steps.ver.outputs.name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --tags origin "refs/tags/${NAME}" >/dev/null; then
+            echo "::error::tag ${NAME} already exists on origin; refusing to re-release it."
+            exit 1
+          fi
+          git add version.properties MagiskModBase/module.prop latestCanary.json \
+            MagiskModuleUpdate_Xposed.json MagiskModuleUpdate_Full.json
+          git commit -m "Version update: ${NAME}"
+          git tag -a "${NAME}" -m "PixelXpert ${NAME}"
+          # Plain (non-force) push: if `patch` moved while this ran, fail rather than overwrite.
+          # Pushes made with GITHUB_TOKEN do not trigger another workflow run.
+          git push origin "HEAD:refs/heads/patch"
+          git push origin "refs/tags/${NAME}"
+
+      - name: Publish GitHub Release (release only)
+        if: env.IS_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.ver.outputs.name }}
+          ZIP: ${{ steps.ver.outputs.zip }}
+          APK: ${{ steps.ver.outputs.apk }}
+        run: |
+          # The zip keeps its exact name: the update JSONs' zipUrl is
+          # releases/download/<NAME>/PixelXpertFork-<NAME>.zip.
+          cp "$APK" "PixelXpertFork-${NAME}.apk"
+
+          # Changelog since the previous canary-* release tag (this fork's tags only), else the
+          # latest 50 commits.
+          PREV_TAG="$(git tag -l 'canary-*' --sort=-creatordate | grep -vxF "${NAME}" | head -n1)"
+          LOG_ARGS=(--no-merges --pretty=format:'- %s (%h)')
+          if [ -n "$PREV_TAG" ]; then
+            LOG_ARGS+=("${PREV_TAG}..${NAME}")
+            HEADER="## Changes since ${PREV_TAG}"
+          else
+            LOG_ARGS+=(-n 50 "${NAME}")
+            HEADER="## Changes (most recent 50 commits)"
+          fi
+          NOTES_FILE="$(mktemp)"
+          printf '%s\n\n%s\n' "$HEADER" "$(git log "${LOG_ARGS[@]}")" > "$NOTES_FILE"
+
+          gh release create "${NAME}" "$ZIP" "PixelXpertFork-${NAME}.apk" \
+            --title "${NAME}" \
+            --notes-file "$NOTES_FILE" \
+            --verify-tag \
+            --latest
