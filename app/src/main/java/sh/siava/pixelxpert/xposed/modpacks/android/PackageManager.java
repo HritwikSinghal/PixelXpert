@@ -1,7 +1,9 @@
 package sh.siava.pixelxpert.xposed.modpacks.android;
 
 import static de.robv.android.xposed.XposedHelpers.callMethod;
+import static de.robv.android.xposed.XposedHelpers.getObjectField;
 import static sh.siava.pixelxpert.xposed.XPrefs.Xprefs;
+import static sh.siava.pixelxpert.xposed.utils.toolkit.Logger.logWarn;
 
 import android.content.Context;
 import android.content.Intent;
@@ -40,20 +42,23 @@ public class PackageManager extends XposedModPack {
 	// Cached launcher app-id (uid without the user portion); -1 until first resolved. Used to grant
 	// the launcher FORCE_STOP_PACKAGES by comparing the calling app-id.
 	private int launcherAppId = -1;
+	// One-shot guard so the FORCE_STOP diagnostic only logs the first time the grant path runs.
+	private boolean forceStopGrantLogged = false;
 
 	public PackageManager(Context context) {
 		super(context);
 	}
 
 	/**
-	 * Resolves and caches the launcher's app-id. Resolved lazily (at permission-check time, long after
-	 * boot) so the PackageManager is ready. Returns -1 if it cannot be resolved, in which case the
-	 * FORCE_STOP_PACKAGES grant is skipped rather than granted to an unknown caller.
+	 * Resolves and caches the launcher's app-id from the given Context's PackageManager. We pass the
+	 * ActivityManagerService's own {@code mContext} (always valid in system_server) rather than the
+	 * modpack's {@code mContext}, which is unreliable in the framework scope. Returns -1 if it cannot
+	 * be resolved, in which case the FORCE_STOP_PACKAGES grant is skipped rather than granted blindly.
 	 */
-	private int getLauncherAppId() {
-		if (launcherAppId == -1) {
+	private int getLauncherAppId(Context context) {
+		if (launcherAppId == -1 && context != null) {
 			try {
-				int uid = mContext.getPackageManager().getPackageUid(Constants.LAUNCHER_PACKAGE, 0);
+				int uid = context.getPackageManager().getPackageUid(Constants.LAUNCHER_PACKAGE, 0);
 				launcherAppId = uid % PER_USER_RANGE;
 			}
 			catch (Throwable ignored) {
@@ -120,8 +125,17 @@ public class PackageManager extends XposedModPack {
 						.run(param -> {
 							try {
 								if (!"android.permission.FORCE_STOP_PACKAGES".equals(param.args[0])) return;
-								int appId = getLauncherAppId();
-								if (appId != -1 && (Binder.getCallingUid() % PER_USER_RANGE) == appId) {
+								// Resolve the launcher uid via AMS's own (always-valid) system context.
+								Context amsContext = (Context) getObjectField(param.thisObject, "mContext");
+								int appId = getLauncherAppId(amsContext);
+								int callingAppId = Binder.getCallingUid() % PER_USER_RANGE;
+								if (!forceStopGrantLogged) {
+									forceStopGrantLogged = true;
+									logWarn("PackageManager: FORCE_STOP check seen -- launcherAppId="
+											+ appId + " callingAppId=" + callingAppId
+											+ " amsContext=" + (amsContext != null));
+								}
+								if (appId != -1 && callingAppId == appId) {
 									param.setResult(PERMISSION_GRANTED);
 								}
 							} catch (Throwable ignored) {

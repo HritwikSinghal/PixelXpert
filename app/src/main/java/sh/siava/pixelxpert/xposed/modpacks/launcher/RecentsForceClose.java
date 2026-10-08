@@ -317,12 +317,36 @@ public class RecentsForceClose extends XposedModPack {
 		try {
 			int layoutId = template.getSourceLayoutResId();
 			if (layoutId == 0 || layoutId == View.NO_ID) return null;
-			return LayoutInflater.from(template.getContext()).inflate(layoutId, parent, false);
+			View row = LayoutInflater.from(template.getContext()).inflate(layoutId, parent, false);
+			// inflate(...,false) applies the XML's own width/gravity, but the launcher gives its live
+			// rows different params (e.g. match_parent) -- without copying them our row renders centered
+			// instead of left-aligned. Clone the template's actual LayoutParams onto our row.
+			copyLayoutParams(template, row);
+			return row;
 		}
 		catch (Throwable t) {
 			log(getClass().getSimpleName() + ": native row re-inflation failed; using manual styling", t);
 			return null;
 		}
+	}
+
+	/** Clones {@code template}'s live LayoutParams (width/height/margins/gravity) onto {@code row}. */
+	private void copyLayoutParams(View template, View row) {
+		try {
+			ViewGroup.LayoutParams lp = template.getLayoutParams();
+			if (lp instanceof android.widget.LinearLayout.LayoutParams) {
+				row.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+						(android.widget.LinearLayout.LayoutParams) lp));
+			} else if (lp instanceof android.widget.FrameLayout.LayoutParams) {
+				row.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+						(android.widget.FrameLayout.LayoutParams) lp));
+			} else if (lp instanceof ViewGroup.MarginLayoutParams) {
+				row.setLayoutParams(new ViewGroup.MarginLayoutParams((ViewGroup.MarginLayoutParams) lp));
+			} else if (lp != null) {
+				row.setLayoutParams(new ViewGroup.LayoutParams(lp));
+			}
+		}
+		catch (Throwable ignored) {}
 	}
 
 	/**
