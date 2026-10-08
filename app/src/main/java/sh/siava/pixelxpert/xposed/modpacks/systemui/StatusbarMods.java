@@ -57,6 +57,7 @@ import androidx.annotation.Nullable;
 import org.objenesis.ObjenesisHelper;
 
 import java.util.ArrayList;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -184,9 +185,16 @@ public class StatusbarMods extends XposedModPack {
 	private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
 	private Object mStatusBarIconController;
+	// A17 QPR3 Compose status bar draws only built-in slots plus "external" icons that arrive through
+	// CommandQueue.setIcon; slots set on StatusBarIconController are stored but never rendered there.
+	// Set only once the Compose external-icon repository registers, so legacy bars never get the
+	// CommandQueue copy (the legacy controller would add it again as "<slot>__external").
+	private static final String EXTERNAL_ICON_REPOSITORY_CLASS = "com.android.systemui.statusbar.systemstatusicons.data.repository.ExternalSystemStatusIconRepository";
+	private Object mCommandQueue;
 
 	private ReflectedClass StatusBarIconClass;
 	private ReflectedClass StatusBarIconHolderClass;
+	private Object volteStatusbarIcon;
 	private Object volteStatusbarIconHolder;
 	private boolean telephonyCallbackRegistered = false;
 	private boolean lastVolteAvailable = false;
@@ -194,6 +202,7 @@ public class StatusbarMods extends XposedModPack {
 	//endregion
 
 	private static boolean VowifiIconEnabled = false;
+	private Object vowifiStatusbarIcon;
 	private Object vowifiStatusbarIconHolder;
 	private boolean lastVowifiAvailable = false;
 	//endregion
@@ -591,6 +600,29 @@ public class StatusbarMods extends XposedModPack {
 					// Compose status bar root, so start from the icon controller, which both paths have.
 					if (VolteIconEnabled || VowifiIconEnabled) initVoData();
 				});
+
+		ReflectedClass CommandQueueClass = ReflectedClass.ofIfPossible("com.android.systemui.statusbar.CommandQueue");
+		if (CommandQueueClass != null) {
+			CommandQueueClass
+					.after("addCallback")
+					.run(param -> {
+						Object callback = param.args[0];
+						if (callback == null || !callback.getClass().getName().startsWith(EXTERNAL_ICON_REPOSITORY_CLASS))
+							return;
+
+						mCommandQueue = param.thisObject;
+						logVerbose("StatusbarMods: Compose external status icon route active");
+						// The repository is a callbackFlow: icons sent before it subscribed are lost, so
+						// re-send the current state on every (re)subscription.
+						if (VolteIconEnabled || VowifiIconEnabled) mMainHandler.post(() -> {
+							try {
+								updateVoData(true);
+							} catch (Throwable t) {
+								log("StatusbarMods: failed to re-send VoLTE/VoWiFi icons", t);
+							}
+						});
+					});
+		}
 
 
 		if (NotificationIconContainerAlwaysOnDisplayViewModelClass.getClazz() != null) //Viewbinder implementation of the notification icon container
@@ -1519,6 +1551,10 @@ public class StatusbarMods extends XposedModPack {
 			setObjectField(statusbarIcon, "iconLevel", 0);
 			setObjectField(statusbarIcon, "number", 0);
 			setObjectField(statusbarIcon, "contentDescription", slotName);
+			// A16+ fields that Objenesis leaves null; the Compose status bar may read them. Absent on
+			// older builds, hence optional.
+			setEnumFieldIfPresent(statusbarIcon, "type", "SystemIcon");
+			setEnumFieldIfPresent(statusbarIcon, "shape", "WRAP_CONTENT");
 
 			return statusbarIcon;
 		} catch (Throwable ignored) {
@@ -1540,6 +1576,19 @@ public class StatusbarMods extends XposedModPack {
 		return holder;
 	}
 
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static void setEnumFieldIfPresent(Object target, String fieldName, String constantName) {
+		try {
+			Field field = target.getClass().getField(fieldName);
+			if (!field.getType().isEnum()) return;
+			field.set(target, Enum.valueOf((Class<? extends Enum>) field.getType(), constantName));
+		} catch (NoSuchFieldException ignored) {
+			// field does not exist on this Android version
+		} catch (Throwable t) {
+			log("StatusbarMods: could not set StatusBarIcon." + fieldName, t);
+		}
+	}
+
 	//endregion
 
 	//region vo_data related
@@ -1548,11 +1597,11 @@ public class StatusbarMods extends XposedModPack {
 			if (!telephonyCallbackRegistered) {
 
 				Icon volteIcon = Icon.createWithResource(BuildConfig.APPLICATION_ID, R.drawable.ic_volte);
-				Object volteStatusbarIcon = getStatusbarIconFor(volteIcon, VO_LTE_SLOT);
+				volteStatusbarIcon = getStatusbarIconFor(volteIcon, VO_LTE_SLOT);
 				volteStatusbarIconHolder = getStatusbarIconHolderFor(volteStatusbarIcon);
 
 				Icon vowifiIcon = Icon.createWithResource(BuildConfig.APPLICATION_ID, R.drawable.ic_vowifi);
-				Object vowifiStatusbarIcon = getStatusbarIconFor(vowifiIcon, VO_WIFI_SLOT);
+				vowifiStatusbarIcon = getStatusbarIconFor(vowifiIcon, VO_WIFI_SLOT);
 				vowifiStatusbarIconHolder = getStatusbarIconHolderFor(vowifiStatusbarIcon);
 
 				//noinspection DataFlowIssue
@@ -1592,12 +1641,13 @@ public class StatusbarMods extends XposedModPack {
 		boolean voWifiAvailable = (Boolean) callMethod(SystemUtils.TelephonyManager(), "isWifiCallingAvailable");
 		boolean volteStateAvailable = (Boolean) callMethod(SystemUtils.TelephonyManager(), "isVolteAvailable");
 		logVerbose("StatusbarMods: vo_data volte=" + volteStateAvailable + " vowifi=" + voWifiAvailable
-				+ " controller=" + (mStatusBarIconController != null) + " force=" + force);
+				+ " controller=" + (mStatusBarIconController != null) + " commandQueue=" + (mCommandQueue != null)
+				+ " force=" + force);
 
 		if (lastVolteAvailable != volteStateAvailable || force) {
 			lastVolteAvailable = volteStateAvailable;
 			if (volteStateAvailable && VolteIconEnabled) {
-				setSBIconSlot(VO_LTE_SLOT, volteStatusbarIconHolder);
+				setSBIconSlot(VO_LTE_SLOT, volteStatusbarIcon, volteStatusbarIconHolder);
 			} else {
 				removeSBIconSlot(VO_LTE_SLOT);
 			}
@@ -1606,19 +1656,23 @@ public class StatusbarMods extends XposedModPack {
 		if (lastVowifiAvailable != voWifiAvailable || force) {
 			lastVowifiAvailable = voWifiAvailable;
 			if (voWifiAvailable && VowifiIconEnabled) {
-				setSBIconSlot(VO_WIFI_SLOT, vowifiStatusbarIconHolder);
+				setSBIconSlot(VO_WIFI_SLOT, vowifiStatusbarIcon, vowifiStatusbarIconHolder);
 			} else {
 				removeSBIconSlot(VO_WIFI_SLOT);
 			}
 		}
 	}
 
-	private void setSBIconSlot(String slot, Object iconHolder) {
-		if (mStatusBarIconController == null || iconHolder == null) return; //too soon; init retries on construction
+	private void setSBIconSlot(String slot, Object statusbarIcon, Object iconHolder) {
+		if (statusbarIcon == null || iconHolder == null) return; //too soon; init retries on construction
 
 		mMainHandler.post(() -> {
 			try {
-				callMethod(mStatusBarIconController, "setIcon", slot, iconHolder);
+				if (mCommandQueue != null) {
+					callMethod(mCommandQueue, "setIcon", slot, statusbarIcon);
+				} else if (mStatusBarIconController != null) {
+					callMethod(mStatusBarIconController, "setIcon", slot, iconHolder);
+				}
 			} catch (Throwable t) {
 				log("StatusbarMods: setIcon failed for slot " + slot, t);
 			}
@@ -1626,13 +1680,15 @@ public class StatusbarMods extends XposedModPack {
 	}
 
 	private void removeSBIconSlot(String slot) {
-		if (mStatusBarIconController == null) return; //probably it's too soon to have a statusbar
-
 		mMainHandler.post(() -> {
 			try {
-				callMethod(mStatusBarIconController, "removeAllIconsForSlot", slot, false);
+				if (mCommandQueue != null) {
+					callMethod(mCommandQueue, "removeIcon", slot);
+				} else if (mStatusBarIconController != null) {
+					callMethod(mStatusBarIconController, "removeAllIconsForSlot", slot, false);
+				}
 			} catch (Throwable t) {
-				log("StatusbarMods: removeAllIconsForSlot failed for slot " + slot, t);
+				log("StatusbarMods: removeIcon failed for slot " + slot, t);
 			}
 		});
 	}
