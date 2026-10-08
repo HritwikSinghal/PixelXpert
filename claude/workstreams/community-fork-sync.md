@@ -44,9 +44,47 @@ It is the most complete source of A17 QPR fixes we have found.
   5. logging commit: `XPrefs.java` (blank line), `ScreenOffKeys.java` (their
      `ensureDoubleTapPowerEnabledIfNeeded()` + our `logWarn`), `CustomNavGestures.java` (their
      `saveFocusedTask()` retry + our `logWarn`). `logWarn` needs no import: `XposedModPack extends Logger`.
-- Scope: `XPLauncher` loads framework modpacks when `isSystemServer`, independent of the scope
-  entry name, so upstream's `android` -> `system` change should not stop our system_server modpacks
-  (UNVERIFIED on device).
+- Scope (corrected after an adversarial check): `isSystemServer` comes from
+  `ModuleLoadedParam.isSystemServer()` in `onModuleLoaded` (`XPLauncher.java:73`), not from
+  `onSystemServerStarting` (which only installs the StatusbarSize early hook). Framework packs load
+  at `XPLauncher.java:231` only if the framework calls `onPackageReady` inside system_server, the
+  `PhoneWindowManager.init` before-hook fires after that, and `isBootLooped` does not bail. With
+  `scope.list` = `system` (and `module.prop` `minApiVersion=101`, `staticScope=true`), Vector v2.2
+  treats `system` as system_server and `android` as the ordinary package, so injection into
+  system_server is likely -- but that `onPackageReady` still fires there is UNVERIFIED. Test on
+  device: verbose logging on, look for "Loaded modpack PackageManager"/"CallVibrator" lines.
+
+### Adversarial review of the rebase (2026-10-08, 2 bug hunters + 4 refuters)
+- CONFIRMED: no change of ours lost at HEAD (3-way `git merge-file` of all 29 shared files vs HEAD;
+  range-diff shows only the intended deviations). Per-commit content of a few `!` commits not checked.
+- FIXED (critical, silent): upstream rewrote `version.properties` to `CANARY_*`/`STABLE_*` keys and we
+  never touched the file, so git merged it with no conflict; our `buildSrc` reads only `VERSION_CODE`
+  and falls back to 0 -> next build would be versionCode 1, a downgrade vs the installed 499.
+  Restored our `VERSION_CODE=499`/`VERSION_NAME=canary-499` as a fixup into the versioning commit.
+  Lesson: after a rebase onto a base that rewrote shared config, diff every file our code READS, not
+  only the conflicted ones.
+- FIXED: their zip-name line called the removed `getVersionNameProvider()` -> `PixelXpert.zip`.
+- OPEN: upstream workflows do not fit our build -- `makeCanaryTestPackage.yml:50` and
+  `makeStableRelease.yml:85,116,135` expect `output/PixelXpertFork-*.zip`; `makeStableRelease.yml:68`
+  passes `-PversionName` (unused by our versioning); `makeCanaryRelease.yml:67` and
+  `.github/prepareCanaryChangelog.sh:3` read `CANARY_VERSION_NAME`. `makeStableRelease` fires on `v*`
+  tags (ours are `fork-v*`, which do not match). Disable them in our Actions before pushing `canary`.
+- PRE-EXISTING (not from the rebase): `fullPackageTestBuild.yml:49`, `xposedPackageTestBuild.yml:52`,
+  `.github/make_debug_zip.sh` expect `app/build/outputs/apk/debug/PixelXpert.apk`, which our
+  `app/build.gradle.kts` no longer produces.
+- LOW: `CustomNavGestures.java` -- upstream calls `saveFocusedTask()` on every ACTION_DOWN; if recents
+  reflection keeps failing, our `logWarn` (with stack trace) in `killForeground` could spam. Consider
+  `logDebug`.
+- Privacy refuter: content clean of serial/home paths in our range EXCEPT a `Signed-off-by:` trailer
+  with the owner's name+email in commit `.github: add changelog to releases`, and a
+  local plans-file path added then removed in the tracker history. All commits also
+  carry the owner email as AUTHOR metadata (public on GitHub regardless of content).
+
+- Packaging hunter: zip layout, module id, output paths verified clean. Updater now targets
+  Codecity001 (confirmed: `UpdateFragment.java:69-70`); on-device module.prop 500 vs APK 499
+  (confirmed via adb). `latestVersion.json` still carries Codecity canary-508 URLs. A stale
+  `output/PixelXpert.zip` (Jun 21, old priv-app layout) sits in the tree -- do not flash it.
+  Not reached: signing-cert comparison of the device APK vs the local release key.
 
 ### How it was surveyed
 ```sh

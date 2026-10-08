@@ -18,7 +18,7 @@ fixes in `PackageManager.java` / `RecentsForceClose.java` are still in the worki
 | Phase | Status | Progress |
 |-------|--------|----------|
 | 1-3: Fork tracking, Build CI, Repo cleanup | Done | 3/3 |
-| 4: Custom features (rolling) | In progress (force-close blocked) | 0/7 open |
+| 4: Custom features (rolling) | In progress (force-close blocked) | 0/10 open |
 | 5: Settings UI reorg | Done | -- |
 | 6: Diagnostic logging | Code done; verify in Phase 8 | -- |
 | 7: A17 QPR3 compatibility | In progress | 1/7 |

@@ -54,6 +54,14 @@ Triggered by a pref change (ContentObserver path), not by boot. The LSPosed verb
 (`/data/adb/lspd/log/verbose_*.log`) shows the same trace under `E/Vector Crash unexpectedly`.
 Mapped to the fork source: the only `setObjectField` calls in `onPreferenceUpdated` are `:262-263`.
 
+### Bytecode proof (adversarial check, 2026-10-08: CONFIRMED)
+`dexdump -d` of the installed APK (source_file `r8-map-id-15c4f641...` = the crash frame's map id):
+`onPreferenceUpdated` holds exactly two `setObjectField` calls. `0x0092 if-eqz AODNIC -> 0x00aa`
+skips both when AODNIC is null; the second call at `0x00a7` (position table `line=168`, the crash
+frame) loads `SBNIC` with no null check. So AODNIC was non-null and SBNIC null. No helper reachable
+from the method has an uncaught `setObjectField`. Fixed on the rebased branch by upstream
+`5749e2f1` (`StatusbarMods.java:277-281`).
+
 ### Why SBNIC is null
 Both hooked classes still exist in QPR3 SystemUI (`dexdump` of the device
 `/system_ext/priv-app/SystemUIGoogle/SystemUIGoogle.apk`):
