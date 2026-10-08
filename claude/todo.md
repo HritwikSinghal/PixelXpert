@@ -10,10 +10,11 @@ numbers, carrier or SIM details, IP addresses, or location. Refer to the repo as
 pasted logcat before saving it here. (Older pushed history already leaks some of this -- see
 `claude/progress.md` Decisions.)
 
-- **Branch model**: `canary` = clean upstream mirror, never commit custom work; `patch` = all fork
+- **Branch model**: upstream is the community fork `Codecity001/PixelXpert` (switched 2026-10-08;
+  the original repo is archived). `canary` = clean upstream mirror, never commit custom work; `patch` = all fork
   work. Rebasing `patch` onto `canary` conflicts on intentionally diverged files (deleted upstream
   CI, rewritten versioning/`PXTasks.gradle.kts`/`buildSrc`, fork metadata) -- resolve toward the fork.
-  Upstream is archived (README notice, 2026-06-21), so the fork is the only place fixes land.
+  Exceptions kept from upstream: user-app module packaging and upstream's CI workflow files.
 - **Build**: use the Nix flake (`nix run` -> APK; `nix run .#zip` -> flashable zip). The system
   `java-21-openjdk` is a JRE without `javac`, so bare `./gradlew` fails. [[nix-flake-build]]
 - **CI**: `forkBuild.yml` on push to `patch` (artifacts) and on `fork-v*` tags (GitHub Release with
@@ -34,19 +35,19 @@ pasted logcat before saving it here. (Older pushed history already leaks some of
 
 ## Phase 7: A17 QPR3 compatibility
 - [ ] qpr3-statusbar -- diagnosed, fix not started -- `claude/workstreams/qpr3-statusbar.md`
-- [ ] Fix SystemUI crash on pref change (`StatusbarMods.java:261-263`, `SBNIC` NPE) -- cherry-pick community fork `5749e2f1`
-- [ ] community-fork-sync -- surveyed, nothing picked -- `claude/workstreams/community-fork-sync.md`
+- [x] Fix SystemUI crash on pref change (`SBNIC` NPE) -- arrived with upstream `5749e2f1` in the rebase
+- [ ] community-fork-sync -- adopted as upstream; rebase done locally, push pending -- `claude/workstreams/community-fork-sync.md`
 - [ ] Log + guard the VoLTE/VoWiFi path (`updateVoData`, `mPhoneStatusbarView` null)
 - [ ] Install a new fork build on the device (fork already installed via Obtainium; same key)
 - [ ] Verify VoLTE/VoWiFi icons under the Compose status bar root; move init off `onViewAttached` if needed
 - [ ] Restore the status-bar notification icon limit on QPR3
 
 ## Phase 4: Custom features (rolling)
-- [ ] recents-force-close -- blocked: AMS grant hook not firing -- `claude/workstreams/recents-force-close.md`
+- [ ] recents-force-close -- blocked: broken on device (user report 2026-10-08), AMS grant hook not firing -- `claude/workstreams/recents-force-close.md`
 - [ ] Reboot actions inline in power menu -- `modpacks/systemui/PowerMenu.java` (`GlobalActionsDialogLite#createActionItems` after-hook, ~L61-76); decide replace vs toggle, reuse `advancedPowerMenu` or new toggle, per-action icons. Needs brainstorm.
 - [ ] Updates tab repoint (in-app self-update) -- updater pulls upstream manifest (`ui/fragments/UpdateFragment.java:69-70`, parsed ~L389-431). Fork must publish its own manifest on `patch` (e.g. `latestPatch.json`, `zipUrl` -> `fork-v*` asset) wired into `forkBuild.yml`. Leave `PyTorchSegmentor.java:40,42`, `Constants.java:12`, `strings.xml github_repo_summary`. [[in-app-updater-manifest-source]] Tackle last.
 - [ ] Bluetooth device battery in status bar (from crDroid) -- new `@SystemUIModPack` `BluetoothBatteryIcon.java` on the VoLTE-icon pattern in `StatusbarMods.java`; `BluetoothDevice.getBatteryLevel()` (API 31+, -1 -> hide). Blocked in practice on qpr3-statusbar (same icon pipeline).
-- [ ] QS brightness slider visibility + position (from crDroid) -- new `QSBrightnessSlider.java`; A16+ QS is Compose (`qs.panels.ui.compose.*`) -- feasibility spike first.
+- [ ] QS brightness slider -- now provided by upstream (`QSBrightnessSlider.java`, `2b1f49cc`); just verify on device.
 - [ ] Hide launcher bottom search bar (QSB) -- `@LauncherModPack`; likely `com.android.launcher3.qsb.*` / `Hotseat` / `QsbContainerView`; default-OFF `HideLauncherSearchBar` in `nav_prefs.xml`. Feasibility check first.
 - [ ] [BUG] Double-tap to wake does nothing -- find the consumer of `doubleTapToWake` (AOD/doze or `PhoneWindowManager`), check A17 signature drift and scope.list. Needs a device.
 

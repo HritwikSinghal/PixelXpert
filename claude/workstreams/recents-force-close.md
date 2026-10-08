@@ -18,7 +18,7 @@ WORKING: row appears; styled by re-inflating the launcher's own option-row layou
 `menu.getTaskContainer().getTask()` / `getTaskView().getFirstTaskContainer()` -- A17 dropped the old
 `TaskView` field + `getTask()`).
 
-BLOCKED: the force-stop. The launcher calls `forceStopPackageAsUser` and system_server throws
+BLOCKED: the force-stop. Re-confirmed broken on device by the user 2026-10-08. The launcher calls `forceStopPackageAsUser` and system_server throws
 `SecurityException ... requires android.permission.FORCE_STOP_PACKAGES`. The grant hook's one-shot
 diagnostic never logs at tap time => the `checkCallingPermission` grant hook is not installed/firing
 in system_server.

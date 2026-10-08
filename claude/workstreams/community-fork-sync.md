@@ -7,21 +7,46 @@ status: active
 # Community fork sync (Codecity001/PixelXpert)
 
 ## Current state
-Surveyed 2026-10-08, nothing picked yet. `Codecity001/PixelXpert` is a GitHub fork of the archived
+ADOPTED AS UPSTREAM 2026-10-08: our commits were rebased onto its `canary` (see Decisions in
+`claude/progress.md`), so everything below is now in our tree. Rebase done locally; push pending.
+The commit lists below remain useful as a map of what upstream changed.
+
+Original survey (2026-10-08): `Codecity001/PixelXpert` is a GitHub fork of the archived
 upstream, branded "PixelXpertFork", actively released (`canary-524` on 2026-10-07, stable `v6.0.3`
 on 2026-10-05). Its `canary` is 141 commits ahead / 0 behind upstream `canary`, touching 73 files.
 It is the most complete source of A17 QPR fixes we have found.
 
 ## Next actions
-1. Cherry-pick `5749e2f1` (SBNIC NPE crash fix) -- unblocks qpr3-statusbar.
-2. Triage the "High value" list below commit by commit; most are small and isolated.
-3. Decide on the user-app install migration (`d3f338c9` + follow-ups) -- it changes the module
-   layout and the pref migration path, so it needs a design decision, not a blind pick.
+1. Push rebased `patch`, fast-forward `canary` to upstream, disable upstream's workflows in our Actions.
+2. On device: smoke-test the upstream features we now ship (QS brightness slider, Compose clock,
+   user-app install over the existing build) alongside ours.
+3. After that, set this workstream to done; later syncs follow CLAUDE.md "Fork Maintenance".
 
 ## Decisions
 <!-- APPEND. YYYY-MM-DD: what was decided, why, what was rejected. -->
+- 2026-10-08: adopt as upstream via rebase (not cherry-picks); user-app packaging taken from
+  upstream; upstream CI kept alongside ours. Rebase notes under Findings.
 
 ## Findings
+
+### Rebase log (2026-10-08)
+- Backup of the pre-rebase tip: branch `backup/patch-pre-codecity-rebase`.
+- 24 commits replayed (22 original + tracker restructure + force-close WIP).
+- Conflicts and resolutions, in order:
+  1. fork CI commit: kept upstream's CI files (both deleted-by-us and conflicting ones).
+  2. versioning commit: `buildSrc/BuildUtils.kt`, `GitTagProvider.kt` -> ours (their changes serve
+     their release flow; only caller outside buildSrc was their zip name in PXTasks).
+  3. metadata commit: `module.prop`, `MagiskModuleUpdate_{Full,Xposed}.json`, `README.md`,
+     `latestCanary.json` -> ours (module identifies as this fork, versionCode stays on our 499 line).
+  4. APK packaging commit: `app/PXTasks.gradle.kts` merged -- our `from(tasks.named<Copy>("renameReleaseApk"))`
+     dependency + their zip-root layout (`into("")`); their installer expects `$MODPATH/PixelXpert.apk`,
+     which is what `renameReleaseApk` produces.
+  5. logging commit: `XPrefs.java` (blank line), `ScreenOffKeys.java` (their
+     `ensureDoubleTapPowerEnabledIfNeeded()` + our `logWarn`), `CustomNavGestures.java` (their
+     `saveFocusedTask()` retry + our `logWarn`). `logWarn` needs no import: `XposedModPack extends Logger`.
+- Scope: `XPLauncher` loads framework modpacks when `isSystemServer`, independent of the scope
+  entry name, so upstream's `android` -> `system` change should not stop our system_server modpacks
+  (UNVERIFIED on device).
 
 ### How it was surveyed
 ```sh
