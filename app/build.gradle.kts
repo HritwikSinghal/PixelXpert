@@ -49,7 +49,10 @@ android {
 			storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
 			storePassword = keystoreProperties.getProperty("storePassword")
 		}
-	} catch (_: Exception) {
+	} catch (e: Exception) {
+		// No ReleaseKey.properties (e.g. CI without the signing secret): fall back to the debug key,
+		// but say so, so a genuine keystore misconfiguration stays diagnosable.
+		logger.warn("Release keystore not loaded (${e.message}); release build will fall back to debug signing.")
 	}
 
 	buildTypes {
@@ -63,7 +66,8 @@ android {
 			isDebuggable = true
 			isMinifyEnabled = false
 			isShrinkResources = false
-			signingConfig = releaseSigning
+			// Fork-specific: debug builds use AGP's default debug keystore so the release key never
+			// signs local/dev/CI debug artifacts.
 		}
 	}
 
