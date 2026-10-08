@@ -2,18 +2,20 @@
 > Last updated: 2026-10-08 | Session: 9
 
 ## Current state
-Objective: carry a small set of custom features and Android-version fixes on top of the archived
-upstream PixelXpert, and autobuild/publish them (`fork-v*` releases; latest `fork-v5.1.1-5`).
+Objective: carry a small set of custom features and Android-version fixes on top of upstream
+`Codecity001/PixelXpert` (community fork with the A17 fixes; the original repo is archived), and
+publish signed `canary-<N>` releases.
 
-The test device moved to Android 17 QPR3 (Sept/Oct 2026). That broke the status bar: SystemUI
-crashes on any PixelXpert pref change, and the VoLTE/VoWiFi icons are gone. Diagnosed on-device,
-the SystemUI crash fix arrived with the new upstream; the VoLTE icons are still unverified
-(Phase 7). The device runs a fork build (installed via
-Obtainium; versionName `canary-499` is reused by the fork). Recents force-close and CallVibrator --
-both system_server modpacks -- are confirmed broken on it.
+Pushed 2026-10-08: `patch` force-pushed to the rebased, privacy-scrubbed history (`4716d94f`), and
+`canary` fast-forwarded to upstream (`60268ff9`). Upstream's 8 workflows are DISABLED in this repo's
+Actions (only "Fork Build" is active). All old `fork-v*` tags and releases were deleted; the repo has
+NO releases yet. Local `patch` is 4 commits ahead of `origin/patch` (README, updater repoint, new
+release workflow, this tracker update) -- committed, NOT pushed.
 
-Recents force-close stays blocked on the system_server permission-grant hook; its uncommitted
-fixes in `PackageManager.java` / `RecentsForceClose.java` are still in the working tree.
+Device: runs an old fork build (Obtainium install, versionName `canary-499`). On it, the SystemUI
+pref-change crash (fixed by upstream in our new base), broken Recents force-close and CallVibrator,
+and missing VoLTE/VoWiFi icons are confirmed. Nothing new is installed yet: the next step is the
+first release, then on-device verification.
 
 | Phase | Status | Progress |
 |-------|--------|----------|
@@ -23,18 +25,23 @@ fixes in `PackageManager.java` / `RecentsForceClose.java` are still in the worki
 | 6: Diagnostic logging | Code done; verify in Phase 8 | -- |
 | 7: A17 QPR3 compatibility | In progress | 1/7 |
 | 8: On-device verification backlog | Pending | 0/9 |
+| 9: Release pipeline | In progress (workflow written, not pushed) | 2/5 |
 
 Workstreams in flight:
-- qpr3-statusbar -- diagnosed: SBNIC NPE blocks VoLTE path; Compose root suspected -- `claude/workstreams/qpr3-statusbar.md`
-- recents-force-close -- blocked: AMS grant hook not firing -- `claude/workstreams/recents-force-close.md`
-- community-fork-sync -- Codecity001/PixelXpert adopted as upstream; our 24 commits rebased onto it locally, push pending -- `claude/workstreams/community-fork-sync.md`
+- release-pipeline -- canary-<N> manual release workflow written + linted, not pushed; first release pending -- `claude/workstreams/release-pipeline.md`
+- qpr3-statusbar -- crash fixed via upstream; VoLTE icons unverified (Compose root suspected) -- `claude/workstreams/qpr3-statusbar.md`
+- recents-force-close -- blocked: broken on device; AMS grant hook not firing; scope change is a lead -- `claude/workstreams/recents-force-close.md`
+- community-fork-sync -- adopted as upstream and pushed; adversarial review recorded -- `claude/workstreams/community-fork-sync.md`
 
 ## Next actions
-1. Push the rebased `patch` + fast-forward `canary` (needs explicit OK; force-push), disable upstream's
-   workflows in Actions, install the new build, re-test force-close / CallVibrator / VoLTE.
-2. qpr3-statusbar: log/guard the VoLTE path.
-3. On device: verify VoLTE/VoWiFi icons with verbose logging; check whether `onViewAttached` fires.
-4. recents-force-close: capture the boot log and follow the decision tree in its workstream.
+1. Push local `patch` (4 commits, plain push -- no force needed), then cut the first release:
+   `gh workflow run forkBuild.yml -R HritwikSinghal/PixelXpert --ref patch`; watch with
+   `gh run watch -R HritwikSinghal/PixelXpert`. Expect release `canary-525`.
+2. Install `PixelXpertFork-canary-525.zip` on the device (flash in KSU manager; its installer
+   pm-installs the APK over the Obtainium one -- same signing key, higher versionCode).
+3. On device, with `verboseLogging` on: re-test Recents force-close, CallVibrator, VoLTE/VoWiFi
+   icons; check that `system_server` mod packs load under the new `system` scope.
+4. qpr3-statusbar: log/guard the VoLTE path; recents-force-close: boot-log decision tree.
 
 ## Decisions (durable)
 - Branch model + intentional upstream divergence: resolve `patch`-onto-`canary` rebase conflicts
@@ -73,8 +80,21 @@ Workstreams in flight:
   the next build; if it recurs, fix it UPSTREAM (PR to the community fork) rather than diverging.
   Version line jumps to upstream's (524 -> next 525), above the installed 499.
 
+- 2026-10-08: pushed the rewritten history (force-push of `patch`, approved) after scrubbing the
+  remaining personal info: a Signed-off-by trailer, a local plans-file path, and all author/committer
+  emails mapped to the GitHub noreply address; repo-local `user.email` set to that address. Deleted
+  all `fork-v5.1.1-*` tags + releases (approved) for a clean slate. Upstream workflows disabled in
+  Actions (they target upstream's branding/release flow). In-app updater repointed at this fork's
+  `patch/latestCanary.json` for both channels (fork publishes canary only).
+- 2026-10-08: release model = manual `workflow_dispatch` on `patch` cuts `canary-<N>`; CI commits the
+  bumped version files back to `patch` (needed so Magisk/KSU + the in-app updater see updates).
+  Rejected: tag-triggered releases (the version is only known after the CI bump).
+
 ## Session log
 - Sessions 1-8 (to 2026-06-21): fork setup, CI, repo cleanup, force-close, settings reorg, logging.
   Detail in `git log -p claude/progress.md` and the workstream files.
 - Session 9 (2026-10-08): diagnosed the A17 QPR3 status bar breakage on-device (SBNIC NPE crash;
-  VoLTE path unreachable; `status_bar_root_modernization` enabled). Restructured the tracker. Surveyed the Codecity001 community fork for cherry-picks.
+  VoLTE path unreachable; `status_bar_root_modernization` enabled). Restructured the tracker.
+  Adopted Codecity001/PixelXpert as upstream (rebase), moved versioning to upstream's, scrubbed
+  personal info from history, ran 2 bug hunters + 4 refuters (findings in community-fork-sync),
+  force-pushed, deleted old releases, wrote the canary-<N> release workflow (not yet pushed).

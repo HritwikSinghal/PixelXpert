@@ -36,11 +36,18 @@ pasted logcat before saving it here. (Older pushed history already leaks some of
 ## Phase 7: A17 QPR3 compatibility
 - [ ] qpr3-statusbar -- diagnosed, fix not started -- `claude/workstreams/qpr3-statusbar.md`
 - [x] Fix SystemUI crash on pref change (`SBNIC` NPE) -- arrived with upstream `5749e2f1` in the rebase
-- [ ] community-fork-sync -- adopted as upstream; rebase done locally, push pending -- `claude/workstreams/community-fork-sync.md`
+- [ ] community-fork-sync -- adopted as upstream, pushed 2026-10-08; on-device smoke test pending -- `claude/workstreams/community-fork-sync.md`
 - [ ] Log + guard the VoLTE/VoWiFi path (`updateVoData`, `mPhoneStatusbarView` null)
 - [ ] Install a new fork build on the device (fork already installed via Obtainium; same key)
 - [ ] Verify VoLTE/VoWiFi icons under the Compose status bar root; move init off `onViewAttached` if needed
 - [ ] Restore the status-bar notification icon limit on QPR3
+
+## Phase 9: Release pipeline
+- [x] Delete old `fork-v*` tags + releases; disable upstream's 8 workflows in Actions
+- [x] Write the `canary-<N>` manual release workflow (`.github/workflows/forkBuild.yml`, actionlint clean)
+- [ ] release-pipeline -- push local `patch` (4 commits) and cut the first release (`canary-525`) -- `claude/workstreams/release-pipeline.md`
+- [ ] Verify the release end-to-end: asset name matches the update JSONs' `zipUrl`, version commit landed on `patch`, KSU manager + in-app updater see it
+- [ ] Clean up local leftovers after the release is verified (needs user OK -- deletes branches/refs): branches `patch-scrubbed`, `patch-private`, `backup/patch-pre-codecity-rebase`, `backup/patch-scrubbed-pre-versioning`, `backup/pre-rewrite-s7`; ref `refs/compare/codecity-canary`; the detached scratch worktree under the session scratchpad (`git worktree prune` after its dir is gone). Never `git push --tags` -- 81 local tags are upstream's.
 
 ## Phase 4: Custom features (rolling)
 - [ ] recents-force-close -- blocked: broken on device (user report 2026-10-08), AMS grant hook not firing -- `claude/workstreams/recents-force-close.md`
