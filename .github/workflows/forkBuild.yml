@@ -88,8 +88,11 @@ jobs:
           REF="${GITHUB_REF_NAME}"
           BASE="PixelXpert-${REF}-${SHORT}"
           mkdir -p dist
-          cp output/PixelXpert.zip "dist/${BASE}.zip"
-          cp app/build/distApk/PixelXpert.apk "dist/${BASE}.apk"
+          # Upstream versioning names the zip PixelXpertFork-<versionName>.zip and renames the
+          # release APK in place to app/build/outputs/apk/release/PixelXpert.apk.
+          ZIP="$(ls -t output/PixelXpertFork-*.zip | head -n 1)"
+          cp "$ZIP" "dist/${BASE}.zip"
+          cp app/build/outputs/apk/release/PixelXpert.apk "dist/${BASE}.apk"
           echo "base=${BASE}" >> "$GITHUB_OUTPUT"
           ls -l dist
 

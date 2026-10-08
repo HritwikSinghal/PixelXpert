@@ -147,8 +147,9 @@
 
             echo
             echo "[OK] Build complete:"
-            [ -f output/PixelXpert.zip ]        && echo "   flashable zip: output/PixelXpert.zip"
-            [ -f app/build/distApk/PixelXpert.apk ] && echo "   apk:           app/build/distApk/PixelXpert.apk"
+            ZIP="$(ls -t output/PixelXpertFork-*.zip 2>/dev/null | head -n 1)"
+            [ -n "$ZIP" ] && echo "   flashable zip: $ZIP"
+            [ -f app/build/outputs/apk/release/PixelXpert.apk ] && echo "   apk:           app/build/outputs/apk/release/PixelXpert.apk"
           '';
         };
 
