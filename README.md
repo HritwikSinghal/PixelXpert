@@ -1,23 +1,27 @@
-### For Pixel Stock Android 12 and 13 (Up to Nov 2022 - AOSP 13R8):  
-[![Latest Release for A12 & A13 up to Nov 2022](https://img.shields.io/badge/Download-v2.4.1-blue)](https://github.com/Codecity001/PixelXpert/releases/tag/v2.4.1)  
-
-### For Pixel Stock Android 13 (Dec 2022) to Android 16 (June 2025):  
-[![Latest Release A13 up to A16](https://img.shields.io/badge/Download-v4.3.0-blue)](https://github.com/Codecity001/PixelXpert/releases/tag/v4.3.0)  
-
 ### For Pixel Stock Android 16 QPR1 and newer:  
-[![Latest Release](https://img.shields.io/github/v/release/Codecity001/PixelXpert?color=green&include_prereleases&label=Download%20Latest%20Stable)](https://github.com/Codecity001/PixelXpert/releases/latest)
-[![Latest Canary Release](https://img.shields.io/badge/Download%20Latest-Canary-blue)](https://github.com/Codecity001/PixelXpert/releases/tag/canary_builds)
+[![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-blue)](https://github.com/HritwikSinghal/PixelXpert/releases/latest)
 
-![Downloads - Stable channel](https://img.shields.io/github/downloads/Codecity001/PixelXpert/total?color=red&label=Downloads%20-%20Stable%20Channel)
+Releases are tagged `canary-<N>` and ship `PixelXpertFork-canary-<N>.zip` (flashable module) plus the APK.
+Per-commit test builds are also available as [GitHub Actions artifacts](https://github.com/HritwikSinghal/PixelXpert/actions/workflows/forkBuild.yml).
 
 
-![Header Image](https://github.com/Codecity001/PixelXpert/blob/canary/.github/PixelXpert_Banner_1280.jpg?raw=true)
+
+[![Telegram URL](https://img.shields.io/badge/Telegram-Join-2CA5E?style=social&logo=telegram)](https://t.me/PixelXpert_Github)
+
+![Header Image](https://github.com/HritwikSinghal/PixelXpert/blob/patch/.github/PixelXpert_Banner_1280.jpg?raw=true)
 
 This is a mixed Xposed+Magisk module, which is made to allow customizations that are not originally designed in AOSP (Android Open Source Project). Please read thorough below before reaching to download links
 <hr>
 
+> **Note (Fork):** This is a maintained fork that carries a small set of custom features on top of its
+> upstream, [Codecity001/PixelXpert](https://github.com/Codecity001/PixelXpert) ("PixelXpertFork"), which
+> carries the Android 17 fixes. The original [siavash79/PixelXpert](https://github.com/siavash79/PixelXpert)
+> is archived. The `canary` branch mirrors upstream; custom work lives on the `patch` branch (the default
+> branch here). See **Fork Features** below.
+<hr>
+
 ### **Features:**
-Currently, PixelXpertFork offers customizations on different aspects of system framework and SystemUI, including:
+Currently, PixelXpert offers customizations on different aspects of system framework and SystemUI, including:
 - Status bar
 - Quick Settings panel
 - Lock screen
@@ -29,46 +33,46 @@ Currently, PixelXpertFork offers customizations on different aspects of system f
 - Screen properties
 <hr>
 
+### **Fork Features:**
+Custom features this fork adds on top of upstream (each opt-in, default-off):
+- **Force close in Recents menu** -- adds a "Force close" entry to the app menu that appears when tapping
+  an app's title in the Recents/Overview screen (alongside App info, Split screen, Pin, Pause app, etc.),
+  so a running app can be force-stopped directly from Recents without going through App info > Force stop.
+  Enable it via the launcher settings toggle ("Add a Force close button to the recents task menu").
+<hr>
+
 ### **Compatibility:**
-PixelXpertFork is ONLY compatible with pixel stock firmware on Google Pixel devices. Any custom ROM (including PE, PE plus, pixel plus ui and etc) or stock ROM outside stock pixel firmware on Google pixel devices (e.g. OneUI on Samsung, MIUI on Xiaomi and etc) is not supported and may not be fully (or even at all) compatible.
+PixelXpert is ONLY compatible with pixel stock firmware on Google Pixel devices. Any custom ROM (including PE, PE plus, pixel plus ui and etc) or stock ROM outside stock pixel firmware on Google pixel devices (e.g. OneUI on Samsung, MIUI on Xiaomi and etc) is not supported and may not be fully (or even at all) compatible.
 
-Here is the compatibility chart according to different android versions and QPRs:
+Supported versions:
 
-- Android 12/12.1 and 13 (up to Nov 2022): [final version: v2.4.1](https://github.com/Codecity001/PixelXpert/releases/tag/v2.4.1).
-- Android 13 stable QPR3 to Android 16 (June 2022): [final version: v.4.3.0](https://github.com/Codecity001/PixelXpert/releases/tag/v4.3.0).
-- Android 16 stable QPR1 and newer: [latest stable version](https://github.com/Codecity001/PixelXpert/releases/latest)
+- Android 16 QPR1 and newer
 <hr>
 
 ### **Prerequisites:**
 - Compatible ROM (see Compatibility text above)
 - Device Rooted with Magisk 24.2+ or KSU
-- LSPosed (Zygisk Version preferred) (For Android 14+ use [LSPosed fork by JingMatrix](https://github.com/JingMatrix/LSPosed/releases))
+- LSPosed (Zygisk Version preferred); on Android 16+ use the [LSPosed fork by JingMatrix](https://github.com/JingMatrix/LSPosed/releases)
 <hr>
 
 ### **How to install:**
-- Download the stable magisk module according to your firmware as mentioned above 
+- Download the latest `PixelXpertFork-canary-<N>.zip` from [Releases](https://github.com/HritwikSinghal/PixelXpert/releases)
 - Install in magisk/KSU
 - Reboot (no bootloops are expected)
-- Open PixelXpertFork app and apply changes
+- Open PixelXpert app and apply changes
 
-P.S. For KSU, there is an extra step of granting root access to PixelXpertFork as it doesn't request automatically as in Magisk
+P.S. For KSU, there is an extra step of granting root access to PixelXpert as it doesn't request automatically as in Magisk
 <hr>
 
-### **Release Variants:**  
-The module is also released in 2 flavors with different manual download and update procedures. But both can utilize automated updates through magisk manager, or through in-app updater (for canary, updates will not count against the module's download count).
-
-<ins>Stable release:</ins> 
-- Manual Install/Update: through repository's Github release page (link below) AND through in-app updater
-
-<ins>Canary release:</ins>
-- Manual Install/Update: through repository's Releases/Actions page (latest canary version is available [here](https://github.com/Codecity001/PixelXpert/releases/tag/canary_builds))
-
-*No matter which flavor you're on, you can always switch to the other one with in-app updater
+### **Releases and updates:**  
+This fork publishes canary releases only. Updates arrive automatically through the Magisk/KSU module
+manager or the in-app updater, both of which read this fork's update JSONs; manual downloads are on the
+[Releases page](https://github.com/HritwikSinghal/PixelXpert/releases).
 <hr>
 
 ### **Translations:**  
 [![Crowdin](https://badges.crowdin.net/aospmods/localized.svg)](https://crowdin.com/project/aospmods)  
-Want to help translate PixelXpertFork to your language? Visit [Crowdin](https://crowdin.com/project/aospmods)
+Want to help translate PixelXpert to your language? Visit [Crowdin](https://crowdin.com/project/aospmods)
 <hr>
 
 ### **Donations:**
@@ -93,4 +97,7 @@ This project is open source and free for usage, build or copy. However, if you r
 
 **Brought to you by:**
 @siavash79 & @ElTifo
+
+**Upstream fork (Android 17 fixes):**
+@Codecity001 -- [Codecity001/PixelXpert](https://github.com/Codecity001/PixelXpert)
 <hr>

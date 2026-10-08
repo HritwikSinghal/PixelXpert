@@ -66,8 +66,11 @@ public class UpdateFragment extends BaseFragment {
 	public static final String MAGISK_MODULES_DIR = "/data/adb/modules";
 	private static final String updateRoot = String.format("%s/%s", MAGISK_UPDATE_DIR, MOD_NAME);
 
-	private static final String stableUpdatesURL = "https://raw.githubusercontent.com/Codecity001/PixelXpert/main/latestStable.json";
-	private static final String canaryUpdatesURL = "https://raw.githubusercontent.com/Codecity001/PixelXpert/canary/latestCanary.json";
+	// Fork-specific: read this fork's manifest, which the release workflow bumps on `patch`. The fork
+	// publishes canary only, so the stable channel reads the same manifest (upstream's would offer
+	// builds signed with a different key, which cannot install over ours).
+	private static final String stableUpdatesURL = "https://raw.githubusercontent.com/HritwikSinghal/PixelXpert/patch/latestCanary.json";
+	private static final String canaryUpdatesURL = "https://raw.githubusercontent.com/HritwikSinghal/PixelXpert/patch/latestCanary.json";
 	DownloadManager downloadManager;
 	long downloadID = 0; //from download manager
 	static boolean canaryUpdate = BuildConfig.VERSION_NAME.toLowerCase().contains("canary");
