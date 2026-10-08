@@ -7,17 +7,18 @@ status: active
 # Release pipeline (canary-<N>)
 
 ## Current state
-First release `canary-525` cut 2026-10-08 (run 37790571253, 3m14s). Verified server side: release has
-`PixelXpertFork-canary-525.zip` + `.apk`; CI committed "Version update: canary-525" (`be23c780`) to
-`patch`; raw `MagiskModuleUpdate_{Full,Xposed}.json` and `latestCanary.json` say 525 and their zipUrl
-returns 200; zip's `module.prop` and bundled APK (`aapt2 dump badging`) are both versionCode 525; zip
-has no `system/` overlay. Not yet checked: KSU manager / in-app updater on device.
+Two releases cut 2026-10-08. `canary-525` (run 37790571253) is verified server side: the zip's
+`module.prop` and bundled APK (`aapt2 dump badging`) are both versionCode 525, every update JSON
+zipUrl returns 200, and the zip has no `system/` overlay. It is installed on the device.
+`canary-526` (run 37797365634) is published with both assets, and CI pushed "Version update:
+canary-526" (`dc11294a`); it is not flashed yet. The device-side updater check is still open.
 
 ## Next actions
-1. After the device runs 525, confirm KSU manager and the in-app Updates tab report "up to date";
-   a later `canary-526` should then show as an update in both.
+1. With 525 installed, check that the KSU manager and the in-app Updates tab offer 526. That proves
+   the commit-back plus manifest path end to end.
 2. To cut the next release: `git pull` first (CI pushes the bump commit to `patch`), then
-   `gh workflow run forkBuild.yml -R HritwikSinghal/PixelXpert --ref patch`.
+   `gh workflow run forkBuild.yml -R HritwikSinghal/PixelXpert --ref patch`. A rebase drops the
+   accumulated version commits and re-stamps once -- `docs/rebasing-on-upstream.md` step 4.
 3. Housekeeping: `actions/checkout@v4` and `actions/upload-artifact@v4` run on deprecated Node 20
    (CI annotation) -- bump when convenient.
 

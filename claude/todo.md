@@ -12,9 +12,8 @@ pasted logcat before saving it here. (Older pushed history already leaks some of
 
 - **Branch model**: upstream is the community fork `Codecity001/PixelXpert` (switched 2026-10-08;
   the original repo is archived). `canary` = clean upstream mirror, never commit custom work; `patch` = all fork
-  work. Rebasing `patch` onto `canary` conflicts on intentionally diverged files (deleted upstream
-  CI, rewritten versioning/`PXTasks.gradle.kts`/`buildSrc`, fork metadata) -- resolve toward the fork.
-  Exceptions kept from upstream: user-app module packaging and upstream's CI workflow files.
+  work as ~14 logical commits. Rebase procedure + conflict policy: `docs/rebasing-on-upstream.md`.
+  New fixes go in as `git commit --fixup=<sha>` so the next rebase folds them.
 - **Build**: use the Nix flake (`nix run` -> APK; `nix run .#zip` -> flashable zip). The system
   `java-21-openjdk` is a JRE without `javac`, so bare `./gradlew` fails. [[nix-flake-build]]
 - **CI**: `forkBuild.yml` on push to `patch` (artifacts only); a manual run on `patch` cuts a
@@ -30,28 +29,28 @@ pasted logcat before saving it here. (Older pushed history already leaks some of
   `adb logcat -s "PixelXpert Lsposed Module"`; `verboseLogging` toggle adds per-hook traces.
 - **Git hygiene**: record `BASE=$(git rev-parse HEAD)` at task start; never rewrite history at/below
   it; confirm before any force-push.
-- **Test device** runs A17 QPR3 with a FORK build installed via Obtainium. The fork reuses upstream's
-  version name (`canary-499`), so `versionName` alone does not tell fork from upstream -- check for
-  fork-only pref keys (`RecentsForceCloseEnabled`, `verboseLogging`) instead.
+- **Test device** runs A17 QPR3 with fork `canary-525` (user app, KSU module). PixelXpert must have
+  "System Framework" ticked in Vector, or every `@FrameworkModPack` silently never loads. Phone is
+  shared with another session -- ask before flash/reboot.
 
 ## Phase 7: A17 QPR3 compatibility
 - [ ] qpr3-statusbar -- VoLTE/VoWiFi fix committed (Handler + init from icon controller), verify on device -- `claude/workstreams/qpr3-statusbar.md`
 - [x] Fix SystemUI crash on pref change (`SBNIC` NPE) -- arrived with upstream `5749e2f1` in the rebase
 - [ ] community-fork-sync -- adopted as upstream, pushed 2026-10-08; on-device smoke test pending -- `claude/workstreams/community-fork-sync.md`
 - [x] Log + guard the VoLTE/VoWiFi path (`updateVoData`, `mPhoneStatusbarView` null)
-- [ ] Install a new fork build on the device (fork already installed via Obtainium; same key)
-- [ ] Verify VoLTE/VoWiFi icons under the Compose status bar root; move init off `onViewAttached` if needed
+- [x] Install a new fork build on the device (`canary-525`, 2026-10-08)
+- [ ] Verify VoLTE/VoWiFi icons under the Compose status bar root (fix in `canary-526`)
 - [ ] Restore the status-bar notification icon limit on QPR3
 
 ## Phase 9: Release pipeline
 - [x] Delete old `fork-v*` tags + releases; disable upstream's 8 workflows in Actions
 - [x] Write the `canary-<N>` manual release workflow (`.github/workflows/forkBuild.yml`, actionlint clean)
 - [x] release-pipeline -- pushed `patch`, cut `canary-525` (2026-10-08) -- `claude/workstreams/release-pipeline.md`
-- [ ] Verify the release end-to-end -- server side DONE (assets, version commit `be23c780`, JSON zipUrls 200, bundled APK versionCode 525); remaining: KSU manager + in-app updater see it on device
+- [ ] Verify the release end-to-end -- server side DONE for 525 and 526; remaining: KSU manager + in-app updater offer 526 over 525 on device
 - [ ] Clean up local leftovers after the release is verified (needs user OK -- deletes branches/refs): branches `patch-scrubbed`, `patch-private`, `backup/patch-pre-codecity-rebase`, `backup/patch-scrubbed-pre-versioning`, `backup/pre-rewrite-s7`; ref `refs/compare/codecity-canary`; the detached scratch worktree under the session scratchpad (`git worktree prune` after its dir is gone). Never `git push --tags` -- 81 local tags are upstream's.
 
 ## Phase 4: Custom features (rolling)
-- [ ] recents-force-close -- force-stop works once Vector has `system` scope; tile-dismiss fix for launcher 907 committed, verify on device -- `claude/workstreams/recents-force-close.md`
+- [ ] recents-force-close -- force-stop works with `system` scope; tile-dismiss + row-alignment fixes in `canary-526`, verify on device -- `claude/workstreams/recents-force-close.md`
 - [ ] Reboot actions inline in power menu -- `modpacks/systemui/PowerMenu.java` (`GlobalActionsDialogLite#createActionItems` after-hook, ~L61-76); decide replace vs toggle, reuse `advancedPowerMenu` or new toggle, per-action icons. Needs brainstorm.
 - [x] Updates tab repoint -- in-app updater reads this fork's `patch/latestCanary.json` for both channels (`1d230786`)
 - [ ] Bluetooth device battery in status bar (from crDroid) -- new `@SystemUIModPack` `BluetoothBatteryIcon.java` on the VoLTE-icon pattern in `StatusbarMods.java`; `BluetoothDevice.getBatteryLevel()` (API 31+, -1 -> hide). Blocked in practice on qpr3-statusbar (same icon pipeline).
@@ -67,7 +66,7 @@ pasted logcat before saving it here. (Older pushed history already leaks some of
 - [ ] [BUG] (null guard committed; containers are likely never captured under Compose, so ignored-icons may not apply -- verify) `StatusIconTuner.setIgnoredIcons` NPE (getObjectField on null) on every pref load, canary-525 -- "failed to apply ignored icons"
 - [ ] [BUG] `GestureNavbarManager` BackPanelController#onMotionEvent hook NPE (getObjectField on null), canary-525, fires on back gestures
 - [x] [BUG] CallVibrator -- FIXED on device 2026-10-08 by ticking System Framework for PixelXpert in Vector (scope was missing `system`). Leftover (user report 2026-10-08; `vibrateOnAnswered`/`vibrateOnDrop` both on). Fix `7a6e4a18` retargeted it to `@FrameworkModPack` -- suspect the system_server scope (`android` vs `system`, see community-fork-sync); else check `onCallStateChanged` args on A17. Cleanup: `@TelecomServerModPack` annotation is dead (keep `TELECOM_SERVER_PACKAGE`, used by `XPLauncher`).
-- [ ] Diagnostic logging -- verbose OFF quiet (errors/warns only); ON -> per-hook traces; deliberate hook miss -> WARN with verbose OFF. [[diagnostic-logging-system]]
+- [x] Diagnostic logging (verbose traces + hook-callback errors seen on device 2026-10-08) -- verbose OFF quiet (errors/warns only); ON -> per-hook traces; deliberate hook miss -> WARN with verbose OFF. [[diagnostic-logging-system]]
 - [ ] Settings homepage entry -- services tile key contains google/microg/gms.
 - [ ] StatusbarGestures (A17 QPR1 Scene rework branches)
 - [ ] EasyUnlock (multi-version credential fallbacks)

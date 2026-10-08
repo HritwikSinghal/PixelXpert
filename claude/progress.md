@@ -1,55 +1,59 @@
 # PixelXpert fork -- Progress
-> Last updated: 2026-10-08 | Session: 9
+> Last updated: 2026-10-08 | Session: 9 (ended; resume from Next actions)
 
 ## Current state
 Objective: carry a small set of custom features and Android-version fixes on top of upstream
 `Codecity001/PixelXpert` (community fork with the A17 fixes; the original repo is archived), and
 publish signed `canary-<N>` releases.
 
-Pushed 2026-10-08: `patch` (rebased, privacy-scrubbed) and `canary` (mirror of upstream). Upstream's
-8 workflows are DISABLED in this repo's Actions (only "Fork Build" is active). First release
-`canary-525` is published and verified server side (assets, version commit-back, update JSONs, APK
-versionCode 525). CI pushes a bump commit to `patch` on every release -- pull before working.
+`patch` = 14 logical commits above `canary` (recomposed + force-pushed 2026-10-08, tree-identical),
+plus a `fixup!` (force-close row alignment) and CI version commits that the next rebase folds away --
+procedure in `docs/rebasing-on-upstream.md`. Releases: `canary-525` (on device) and `canary-526`
+(published 2026-10-08, NOT yet flashed; contains every fix below). Upstream's 8 workflows stay
+DISABLED in Actions. CI pushes a version commit to `patch` on every release -- pull before working.
 
-Device: runs `canary-525` (flashed 2026-10-08; user app, no priv-app overlay). PixelXpert needed
-"System Framework" ticked in Vector (scope lacked `system`) -- after that CallVibrator works and
-Recents force-stop works; only the tile dismiss failed (fix committed, unverified). VoLTE/VoWiFi icons
-still missing with no PixelXpert log on that path. The phone is SHARED with another session -- ask
-before flash/reboot/app restarts.
+Device: runs `canary-525`. PixelXpert needs "System Framework" ticked in Vector (scope lacked
+`system`); with it CallVibrator works and Recents force-stop works. The phone is SHARED with another
+session -- ask before flash/reboot/app restarts.
+
+Unverified fixes in `canary-526`: Recents tile dismiss on launcher 907 (`dismissTaskView`), Force
+close row alignment (icon set as background of the `id/icon` View), VoLTE/VoWiFi icons under the
+Compose status bar (main-looper Handler, init from `StatusBarIconControllerImpl`), StatusIconTuner
+null guard.
 
 | Phase | Status | Progress |
 |-------|--------|----------|
 | 1-3: Fork tracking, Build CI, Repo cleanup | Done | 3/3 |
-| 4: Custom features (rolling) | In progress (force-close blocked) | 0/10 open |
+| 4: Custom features (rolling) | In progress | -- |
 | 5: Settings UI reorg | Done | -- |
-| 6: Diagnostic logging | Code done; verify in Phase 8 | -- |
-| 7: A17 QPR3 compatibility | In progress | 1/7 |
-| 8: On-device verification backlog | Pending | 0/9 |
-| 9: Release pipeline | In progress (canary-525 released; device check left) | 3/5 |
+| 6: Diagnostic logging | Done; verified on device (verbose traces seen) | -- |
+| 7: A17 QPR3 compatibility | In progress (fixes in canary-526, unverified) | -- |
+| 8: On-device verification backlog | In progress | -- |
+| 9: Release pipeline | Done except on-device updater check | 4/5 |
 
 Workstreams in flight:
-- release-pipeline -- canary-525 released + verified server side; on-device updater check left -- `claude/workstreams/release-pipeline.md`
-- qpr3-statusbar -- VoLTE/VoWiFi null-view bug confirmed + fix committed, unverified -- `claude/workstreams/qpr3-statusbar.md`
-- recents-force-close -- blocked: broken on device; force-stop works after enabling `system` scope; tile-dismiss fix committed, unverified -- `claude/workstreams/recents-force-close.md`
-- community-fork-sync -- adopted as upstream and pushed; adversarial review recorded -- `claude/workstreams/community-fork-sync.md`
+- release-pipeline -- canary-525/526 released; KSU/in-app updater on-device check left -- `claude/workstreams/release-pipeline.md`
+- qpr3-statusbar -- VoLTE/VoWiFi null-view fix in canary-526, verify on device -- `claude/workstreams/qpr3-statusbar.md`
+- recents-force-close -- works with `system` scope; tile dismiss + row alignment fixes in canary-526, verify -- `claude/workstreams/recents-force-close.md`
+- community-fork-sync -- upstream adopted; rebase procedure now in `docs/rebasing-on-upstream.md` -- `claude/workstreams/community-fork-sync.md`
 
 ## Next actions
-1. Install a build with `6d31f7c3` + the VoLTE fix and verify the Recents tile dismiss (next release `canary-526`, or a locally built signed
-   APK + launcher restart).
-2. qpr3-statusbar: verify VoLTE/VoWiFi icons with the same build; read the verbose `vo_data` line if
-   still missing (see workstream Findings).
-3. New canary-525 NPEs in Phase 8: `StatusIconTuner.setIgnoredIcons`, `GestureNavbarManager` back hook.
-4. Confirm KSU manager + Updates tab see 525 as current; local leftover refs cleanup (needs user OK).
+1. With the user's go-ahead (shared phone): flash `PixelXpertFork-canary-526.zip` via
+   `ksud module install`, reboot, `adb logcat -G 16M`, keep `verboseLogging` on.
+2. Verify on device: Recents Force close row lines up with native rows and the tile disappears;
+   VoLTE/VoWiFi icons show (else read the verbose `StatusbarMods: vo_data ...` line, see
+   qpr3-statusbar Findings); KSU manager + Updates tab report 526 as current.
+3. Remaining canary-525 NPE: `GestureNavbarManager` BackPanelController#onMotionEvent hook.
+4. Next upstream sync or before the next release: rebase per `docs/rebasing-on-upstream.md`
+   (folds the `fixup!` and version commits; needs a confirmed force-push).
 
 ## Decisions (durable)
-- Branch model + intentional upstream divergence: resolve `patch`-onto-`canary` rebase conflicts
-  toward the fork (deleted upstream CI, rewritten versioning/`PXTasks.gradle.kts`/`buildSrc`, fork
-  metadata).
+- Branch model + upstream sync: rebase `patch` onto `canary` with the policy in
+  `docs/rebasing-on-upstream.md` (code -> upstream + our hunks; fork metadata/CI/docs -> ours).
 - Git hygiene: only fork commits ABOVE the upstream merge-base are ever rewritten; canary/upstream
   history is untouchable; force-push needs explicit confirmation.
-- Build pipeline (Sessions 5-6): version bump is ordered BEFORE assemble and the APK is lazily stamped
-  (AGP 9 removed `outputFileName`); `renameReleaseApk` copies to `build/distApk/PixelXpert.apk`,
-  which both `createZip` and `forkBuild.yml` consume. Stable channel versions off the nearest `v*` tag.
+- 2026-10-08: `patch` is kept as minimal logical commits (one per concern) so upstream rebases stay
+  cheap; fixes land as `fixup!` commits and fold at the next rebase.
 - 2026-10-08: tracker restructured to `todo.md` + `progress.md` + `workstreams/`; `tasks.md` folded
   into `workstreams/settings-reorg.md` and `todo.md`; `handoff.md` retired (superseded by the tracker).
 - 2026-10-08: the repo is public -- no identifying info in `claude/` (rule at the top of `todo.md`).
@@ -93,5 +97,7 @@ Workstreams in flight:
   VoLTE path unreachable; `status_bar_root_modernization` enabled). Restructured the tracker.
   Adopted Codecity001/PixelXpert as upstream (rebase), moved versioning to upstream's, scrubbed
   personal info from history, ran 2 bug hunters + 4 refuters (findings in community-fork-sync),
-  force-pushed, deleted old releases, wrote the canary-<N> release workflow, pushed it and cut + verified
-  `canary-525`.
+  force-pushed, deleted old releases, wrote the canary-<N> release workflow, cut `canary-525` and
+  flashed it; found the missing Vector `system` scope (CallVibrator fixed), fixed Recents dismiss/
+  alignment and VoLTE/VoWiFi for A17 QPR3, recomposed `patch` 41 -> 14 commits, cut `canary-526`,
+  wrote `docs/rebasing-on-upstream.md`.

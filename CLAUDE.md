@@ -11,17 +11,12 @@ Branch model:
 - **`canary`** -- clean mirror of upstream `Codecity001/PixelXpert:canary`. Never commit custom work here.
   Sync with: `git fetch upstream && git checkout canary && git merge --ff-only upstream/canary && git push origin canary`.
 - **`patch`** -- the fork's default branch; carries all custom features on top of `canary`.
-  After syncing canary, bring patch up to date with `git checkout patch && git rebase canary` (then force-push).
+  After syncing canary, rebase patch onto it following `docs/rebasing-on-upstream.md` (folds `fixup!`
+  and CI version commits, conflict policy, per-commit build check; force-push needs confirmation).
 
-`patch` keeps upstream's versioning (`buildSrc`, `version.properties`, `app/PXTasks.gradle.kts`,
-`app/build.gradle.kts`), packaging (user app: APK at the zip root, installed by
-`MagiskModBase/customize.sh`/`service.sh`) and CI workflow files, so those rarely conflict.
-Fork-only divergence is kept small and marked "Fork-specific" in comments: the release URL in
-`BuildUtils.kt`, debug-build signing in `app/build.gradle.kts`, fork-pointed metadata (module.prop,
-update JSONs, latestCanary.json, README) and our `forkBuild.yml`. Resolve conflicts on those toward
-the fork; for code conflicts take upstream's fix and re-apply our hunk on top (usually our `log*`
-calls). After a rebase, also diff every config file the build READS -- a silently merged
-`version.properties` once broke versioning with no conflict.
+`patch` keeps upstream's versioning, packaging (user app, APK at the zip root) and CI workflow files
+unchanged; fork-only divergence is kept small and marked "Fork-specific" in comments. The conflict
+policy and post-rebase checks live in `docs/rebasing-on-upstream.md`.
 
 Remotes: `origin` = `HritwikSinghal/PixelXpert` (the fork), `upstream` = `Codecity001/PixelXpert`,
 `original` = `siavash79/PixelXpert` (archived; reference only).
