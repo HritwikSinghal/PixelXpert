@@ -372,6 +372,15 @@ public class RecentsForceClose extends XposedModPack {
 			return;
 		}
 
+		// A17 launcher (907) rows: the icon slot is a plain View (id/icon) whose glyph is its background.
+		// Without this, the fallback below draws the icon inside the label, leaving the icon column
+		// empty and shifting our row's icon + text right of the native ones.
+		View iconSlot = findLauncherIdView(row, "icon");
+		if (iconSlot != null && icon != null) {
+			iconSlot.setBackground(icon);
+			return;
+		}
+
 		// No dedicated icon view: the native row draws its glyph as a start compound drawable. Match
 		// the existing compound drawable's bounds when present so our icon is sized exactly like native.
 		if (text != null && icon != null) {
@@ -383,6 +392,17 @@ public class RecentsForceClose extends XposedModPack {
 			} else {
 				text.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
 			}
+		}
+	}
+
+	/** Finds a descendant of {@code row} by the launcher's own id name, or null when absent. */
+	private View findLauncherIdView(View row, String idName) {
+		try {
+			int id = row.getResources().getIdentifier(idName, "id", row.getContext().getPackageName());
+			return id == 0 ? null : row.findViewById(id);
+		}
+		catch (Throwable ignored) {
+			return null;
 		}
 	}
 
