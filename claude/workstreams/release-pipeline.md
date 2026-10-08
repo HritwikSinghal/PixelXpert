@@ -52,3 +52,9 @@ canary-526" (`dc11294a`); it is not flashed yet. The device-side updater check i
   updater now.
 - Upstream workflows are disabled (not deleted) in Actions; `makeCanaryRelease` and `crowdin_upload`
   would otherwise fire on `canary` pushes.
+- 2026-10-08 canary-527: the release run built fine and pushed the version commit, but the tag push was
+  rejected with a bare `[remote rejected] (failed)` (no tag rulesets; transient). Left `patch` advertising
+  527 with no release. Recovered by hand: `gh run download <run>`, verify module.prop + `aapt2 dump
+  badging` say 527, `git tag -a canary-527 <version commit>`, push ONLY that tag ref, then `gh release
+  create` with the run's zip/apk renamed `PixelXpertFork-canary-527.*` (mirrors the publish step). Do not
+  re-dispatch in this state -- it would bump to 528 and orphan 527.

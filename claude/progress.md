@@ -7,13 +7,12 @@ Objective: carry a small set of custom features and Android-version fixes on top
 publish signed `canary-<N>` releases.
 
 `patch` = 14 logical commits above `canary` (recomposed + force-pushed 2026-10-08, tree-identical),
-plus `fixup!` commits (force-close row alignment; Compose VoLTE route, local/unpushed) and CI version
+plus `fixup!` commits (force-close row alignment; Compose VoLTE route) and CI version
 commits that the next rebase folds away -- procedure in `docs/rebasing-on-upstream.md`. Releases:
-`canary-525`, `canary-526` (2026-10-08; flashed). Upstream's 8 workflows stay
+`canary-525`, `canary-526` (flashed), `canary-527` (2026-10-08; VoLTE Compose fix; not yet flashed). Upstream's 8 workflows stay
 DISABLED in Actions. CI pushes a version commit to `patch` on every release -- pull before working.
 
-Device: runs a LOCAL build (versionCode 527 from `nix run .`, release-signed; not an official release)
-= `canary-526` + fixup `dcc9dccd`. PixelXpert needs "System Framework" ticked in Vector; with it
+Device: runs a LOCAL build (versionCode 527 from `nix run .`, same code as release `canary-527`). PixelXpert needs "System Framework" ticked in Vector; with it
 CallVibrator and Recents force-stop work. The phone is SHARED with another session -- ask before
 flash/reboot/app restarts. After `adb install`, restart SystemUI AFTER the install completes or the old
 hooks stay loaded.
@@ -21,8 +20,8 @@ hooks stay loaded.
 Verified 2026-10-08: VoLTE/VoWiFi icons on the Compose status bar (via `CommandQueue`, see
 qpr3-statusbar); no StatusIconTuner NPE after a SystemUI restart. Still unverified: Recents tile
 dismiss + Force close row alignment; KSU/in-app updater offering a new release.
-Local build numbering: `nix run .` stamped 527 although `version.properties` says 526 (upstream's
-config-time versioning, the accepted trade-off in Decisions); the next CI release will also be 527.
+Local build numbering: `nix run .` stamps version.properties+1 (upstream's config-time versioning, the
+accepted trade-off in Decisions), so a local test build collides with the next release's versionCode.
 
 | Phase | Status | Progress |
 |-------|--------|----------|
@@ -41,8 +40,8 @@ Workstreams in flight:
 - community-fork-sync -- upstream adopted; rebase procedure now in `docs/rebasing-on-upstream.md` -- `claude/workstreams/community-fork-sync.md`
 
 ## Next actions
-1. Push `patch` (2 new fixups, needs the user's OK) and cut a release (`canary-527`) so the device runs an
-   official build; then check KSU manager + Updates tab offer it.
+1. Flash `canary-527` from KSU (the in-app updater will NOT offer it: device already reports 527).
+   The first real in-app updater test is `canary-528` (button enables only when latest > installed).
 2. On device: Recents Force close row alignment + tile dismiss.
 3. Route the app-switch icon through `setSBIconSlot` (same Compose issue as VoLTE).
 4. Remaining canary-525 NPE: `GestureNavbarManager` BackPanelController#onMotionEvent hook.
@@ -104,3 +103,4 @@ Workstreams in flight:
   wrote `docs/rebasing-on-upstream.md`.
 - Session 10 (2026-10-08): flashed canary-526; found QPR3 Compose bar ignores StatusBarIconController
   slots; routed VoLTE/VoWiFi via CommandQueue external icons -- verified on device (local build).
+  Released canary-527 (CI tag push failed transiently; tag + release finished by hand from the run's artifacts).
