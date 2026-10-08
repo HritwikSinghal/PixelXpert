@@ -13,7 +13,8 @@ fun bumpFileStandalone(file: File, newVersionCode: Int, newVersionName: String) 
     contents = replaceSectionContents(contents, "version", newVersionName)
     contents = replaceSectionContents(contents, "versionCode", newVersionCode.toString())
 
-    val newZipUrl = "https://github.com/Codecity001/PixelXpert/releases/download/$newVersionName/PixelXpertFork-$newVersionName.zip"
+    // Fork-specific: upstream hardcodes its own repo here; point the bumped update JSONs at this fork.
+    val newZipUrl = "https://github.com/HritwikSinghal/PixelXpert/releases/download/$newVersionName/PixelXpertFork-$newVersionName.zip"
     contents = replaceSectionContents(contents, "zipUrl_Xposed", newZipUrl)
     contents = replaceSectionContents(contents, "zipUrl", newZipUrl)
 
