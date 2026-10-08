@@ -7,6 +7,12 @@ status: active
 # A17 QPR3 status bar: VoLTE/VoWiFi icons + SystemUI pref crash
 
 ## Current state
+2026-10-08: VoLTE/VoWiFi icons WORK on device (local build of `patch` + fixup `dcc9dccd`, not yet released):
+icons go through `CommandQueue.setIcon/removeIcon` once the Compose `ExternalSystemStatusIconRepository`
+registers (hook on `CommandQueue.addCallback`), else the legacy controller. Log: `vo_data ... commandQueue=true`.
+Open: app-switch slot on the same route; status-bar notification icon limit.
+History below.
+
 Crash fixed by the upstream switch (2026-10-08: upstream `5749e2f1` guards `SBNIC`
 separately); VoLTE/VoWiFi still unverified. Original diagnosis: Two linked breakages since the A17 QPR3 update (first seen on the Sept 2026
 build, still present on `CP3A.261005.005`, Oct 2026):

@@ -1,5 +1,5 @@
 # PixelXpert fork -- Progress
-> Last updated: 2026-10-08 | Session: 9 (ended; resume from Next actions)
+> Last updated: 2026-10-08 | Session: 10
 
 ## Current state
 Objective: carry a small set of custom features and Android-version fixes on top of upstream
@@ -7,19 +7,22 @@ Objective: carry a small set of custom features and Android-version fixes on top
 publish signed `canary-<N>` releases.
 
 `patch` = 14 logical commits above `canary` (recomposed + force-pushed 2026-10-08, tree-identical),
-plus a `fixup!` (force-close row alignment) and CI version commits that the next rebase folds away --
-procedure in `docs/rebasing-on-upstream.md`. Releases: `canary-525` (on device) and `canary-526`
-(published 2026-10-08, NOT yet flashed; contains every fix below). Upstream's 8 workflows stay
+plus `fixup!` commits (force-close row alignment; Compose VoLTE route, local/unpushed) and CI version
+commits that the next rebase folds away -- procedure in `docs/rebasing-on-upstream.md`. Releases:
+`canary-525`, `canary-526` (2026-10-08; flashed). Upstream's 8 workflows stay
 DISABLED in Actions. CI pushes a version commit to `patch` on every release -- pull before working.
 
-Device: runs `canary-525`. PixelXpert needs "System Framework" ticked in Vector (scope lacked
-`system`); with it CallVibrator works and Recents force-stop works. The phone is SHARED with another
-session -- ask before flash/reboot/app restarts.
+Device: runs a LOCAL build (versionCode 527 from `nix run .`, release-signed; not an official release)
+= `canary-526` + fixup `dcc9dccd`. PixelXpert needs "System Framework" ticked in Vector; with it
+CallVibrator and Recents force-stop work. The phone is SHARED with another session -- ask before
+flash/reboot/app restarts. After `adb install`, restart SystemUI AFTER the install completes or the old
+hooks stay loaded.
 
-Unverified fixes in `canary-526`: Recents tile dismiss on launcher 907 (`dismissTaskView`), Force
-close row alignment (icon set as background of the `id/icon` View), VoLTE/VoWiFi icons under the
-Compose status bar (main-looper Handler, init from `StatusBarIconControllerImpl`), StatusIconTuner
-null guard.
+Verified 2026-10-08: VoLTE/VoWiFi icons on the Compose status bar (via `CommandQueue`, see
+qpr3-statusbar); no StatusIconTuner NPE after a SystemUI restart. Still unverified: Recents tile
+dismiss + Force close row alignment; KSU/in-app updater offering a new release.
+Local build numbering: `nix run .` stamped 527 although `version.properties` says 526 (upstream's
+config-time versioning, the accepted trade-off in Decisions); the next CI release will also be 527.
 
 | Phase | Status | Progress |
 |-------|--------|----------|
@@ -27,25 +30,23 @@ null guard.
 | 4: Custom features (rolling) | In progress | -- |
 | 5: Settings UI reorg | Done | -- |
 | 6: Diagnostic logging | Done; verified on device (verbose traces seen) | -- |
-| 7: A17 QPR3 compatibility | In progress (fixes in canary-526, unverified) | -- |
+| 7: A17 QPR3 compatibility | In progress (VoLTE/VoWiFi verified; icon limit open) | -- |
 | 8: On-device verification backlog | In progress | -- |
 | 9: Release pipeline | Done except on-device updater check | 4/5 |
 
 Workstreams in flight:
 - release-pipeline -- canary-525/526 released; KSU/in-app updater on-device check left -- `claude/workstreams/release-pipeline.md`
-- qpr3-statusbar -- VoLTE/VoWiFi null-view fix in canary-526, verify on device -- `claude/workstreams/qpr3-statusbar.md`
+- qpr3-statusbar -- VoLTE/VoWiFi verified via CommandQueue route (unpushed fixups); app-switch slot + icon limit left -- `claude/workstreams/qpr3-statusbar.md`
 - recents-force-close -- works with `system` scope; tile dismiss + row alignment fixes in canary-526, verify -- `claude/workstreams/recents-force-close.md`
 - community-fork-sync -- upstream adopted; rebase procedure now in `docs/rebasing-on-upstream.md` -- `claude/workstreams/community-fork-sync.md`
 
 ## Next actions
-1. With the user's go-ahead (shared phone): flash `PixelXpertFork-canary-526.zip` via
-   `ksud module install`, reboot, `adb logcat -G 16M`, keep `verboseLogging` on.
-2. Verify on device: Recents Force close row lines up with native rows and the tile disappears;
-   VoLTE/VoWiFi icons show (else read the verbose `StatusbarMods: vo_data ...` line, see
-   qpr3-statusbar Findings); KSU manager + Updates tab report 526 as current.
-3. Remaining canary-525 NPE: `GestureNavbarManager` BackPanelController#onMotionEvent hook.
-4. Next upstream sync or before the next release: rebase per `docs/rebasing-on-upstream.md`
-   (folds the `fixup!` and version commits; needs a confirmed force-push).
+1. Push `patch` (2 new fixups, needs the user's OK) and cut a release (`canary-527`) so the device runs an
+   official build; then check KSU manager + Updates tab offer it.
+2. On device: Recents Force close row alignment + tile dismiss.
+3. Route the app-switch icon through `setSBIconSlot` (same Compose issue as VoLTE).
+4. Remaining canary-525 NPE: `GestureNavbarManager` BackPanelController#onMotionEvent hook.
+5. Next upstream sync or before the next release: rebase per `docs/rebasing-on-upstream.md`.
 
 ## Decisions (durable)
 - Branch model + upstream sync: rebase `patch` onto `canary` with the policy in
@@ -101,3 +102,5 @@ Workstreams in flight:
   flashed it; found the missing Vector `system` scope (CallVibrator fixed), fixed Recents dismiss/
   alignment and VoLTE/VoWiFi for A17 QPR3, recomposed `patch` 41 -> 14 commits, cut `canary-526`,
   wrote `docs/rebasing-on-upstream.md`.
+- Session 10 (2026-10-08): flashed canary-526; found QPR3 Compose bar ignores StatusBarIconController
+  slots; routed VoLTE/VoWiFi via CommandQueue external icons -- verified on device (local build).

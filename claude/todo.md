@@ -34,12 +34,13 @@ pasted logcat before saving it here. (Older pushed history already leaks some of
   shared with another session -- ask before flash/reboot.
 
 ## Phase 7: A17 QPR3 compatibility
-- [ ] qpr3-statusbar -- VoLTE/VoWiFi fix committed (Handler + init from icon controller), verify on device -- `claude/workstreams/qpr3-statusbar.md`
+- [ ] qpr3-statusbar -- VoLTE/VoWiFi WORKS on device via `CommandQueue` (local fixup, unpushed); left: app-switch icon on the same route, SB icon limit -- `claude/workstreams/qpr3-statusbar.md`
 - [x] Fix SystemUI crash on pref change (`SBNIC` NPE) -- arrived with upstream `5749e2f1` in the rebase
 - [ ] community-fork-sync -- adopted as upstream, pushed 2026-10-08; on-device smoke test pending -- `claude/workstreams/community-fork-sync.md`
 - [x] Log + guard the VoLTE/VoWiFi path (`updateVoData`, `mPhoneStatusbarView` null)
 - [x] Install a new fork build on the device (`canary-525`, 2026-10-08)
-- [ ] Verify VoLTE/VoWiFi icons under the Compose status bar root (fix in `canary-526`)
+- [x] VoLTE/VoWiFi icons under the Compose status bar -- verified on device 2026-10-08 (local build, fixup `dcc9dccd`)
+- [ ] App-switch icon (`APP_SWITCH_SLOT`) still uses `StatusBarIconController` -- route via `setSBIconSlot` so it draws on the Compose bar
 - [ ] Restore the status-bar notification icon limit on QPR3
 
 ## Phase 9: Release pipeline
@@ -53,7 +54,7 @@ pasted logcat before saving it here. (Older pushed history already leaks some of
 - [ ] recents-force-close -- force-stop works with `system` scope; tile-dismiss + row-alignment fixes in `canary-526`, verify on device -- `claude/workstreams/recents-force-close.md`
 - [ ] Reboot actions inline in power menu -- `modpacks/systemui/PowerMenu.java` (`GlobalActionsDialogLite#createActionItems` after-hook, ~L61-76); decide replace vs toggle, reuse `advancedPowerMenu` or new toggle, per-action icons. Needs brainstorm.
 - [x] Updates tab repoint -- in-app updater reads this fork's `patch/latestCanary.json` for both channels (`1d230786`)
-- [ ] Bluetooth device battery in status bar (from crDroid) -- new `@SystemUIModPack` `BluetoothBatteryIcon.java` on the VoLTE-icon pattern in `StatusbarMods.java`; `BluetoothDevice.getBatteryLevel()` (API 31+, -1 -> hide). Blocked in practice on qpr3-statusbar (same icon pipeline).
+- [ ] Bluetooth device battery in status bar (from crDroid) -- new `@SystemUIModPack` `BluetoothBatteryIcon.java` on the VoLTE-icon pattern in `StatusbarMods.java`; `BluetoothDevice.getBatteryLevel()` (API 31+, -1 -> hide). Unblocked: use the `CommandQueue` route in `setSBIconSlot`.
 - [ ] QS brightness slider -- now provided by upstream (`QSBrightnessSlider.java`, `2b1f49cc`); just verify on device.
 - [ ] Hide launcher bottom search bar (QSB) -- `@LauncherModPack`; likely `com.android.launcher3.qsb.*` / `Hotseat` / `QsbContainerView`; default-OFF `HideLauncherSearchBar` in `nav_prefs.xml`. Feasibility check first.
 - [ ] [BUG] Double-tap to wake does nothing -- find the consumer of `doubleTapToWake` (AOD/doze or `PhoneWindowManager`), check A17 signature drift and scope.list. Needs a device.
@@ -63,7 +64,7 @@ pasted logcat before saving it here. (Older pushed history already leaks some of
 - [ ] Install-path trap: `customize.sh`/`service.sh` use `pm install -r -d`; on this user build a LOWER versionCode fails silently (logged only to `$MODDIR/install.log`). Keep versionCode monotonic above the installed build.
 
 ## Phase 8: On-device verification backlog
-- [ ] [BUG] (null guard committed; containers are likely never captured under Compose, so ignored-icons may not apply -- verify) `StatusIconTuner.setIgnoredIcons` NPE (getObjectField on null) on every pref load, canary-525 -- "failed to apply ignored icons"
+- [ ] [BUG] (null guard committed; no NPE in SystemUI log after restart 2026-10-08; whether ignored-icons actually hides icons under Compose is untested) `StatusIconTuner.setIgnoredIcons` NPE (getObjectField on null) on every pref load, canary-525 -- "failed to apply ignored icons"
 - [ ] [BUG] `GestureNavbarManager` BackPanelController#onMotionEvent hook NPE (getObjectField on null), canary-525, fires on back gestures
 - [x] [BUG] CallVibrator -- FIXED on device 2026-10-08 by ticking System Framework for PixelXpert in Vector (scope was missing `system`). Leftover (user report 2026-10-08; `vibrateOnAnswered`/`vibrateOnDrop` both on). Fix `7a6e4a18` retargeted it to `@FrameworkModPack` -- suspect the system_server scope (`android` vs `system`, see community-fork-sync); else check `onCallStateChanged` args on A17. Cleanup: `@TelecomServerModPack` annotation is dead (keep `TELECOM_SERVER_PACKAGE`, used by `XPLauncher`).
 - [x] Diagnostic logging (verbose traces + hook-callback errors seen on device 2026-10-08) -- verbose OFF quiet (errors/warns only); ON -> per-hook traces; deliberate hook miss -> WARN with verbose OFF. [[diagnostic-logging-system]]
