@@ -75,6 +75,8 @@ It is the most complete source of A17 QPR fixes we have found.
 - LOW: `CustomNavGestures.java` -- upstream calls `saveFocusedTask()` on every ACTION_DOWN; if recents
   reflection keeps failing, our `logWarn` (with stack trace) in `killForeground` could spam. Consider
   `logDebug`.
+- 2026-10-08 follow-up: switched to upstream versioning (see progress.md Decisions); the
+  version.properties fix above is superseded (file now equals upstream's CANARY_*/STABLE_* format).
 - Privacy refuter: content clean of serial/home paths in our range EXCEPT a `Signed-off-by:` trailer
   with the owner's name+email in commit `.github: add changelog to releases`, and a
   local plans-file path added then removed in the tracker history. All commits also

@@ -63,6 +63,16 @@ Workstreams in flight:
   commits (`git filter-repo --replace-text`, range canary..patch only). Old SHAs may stay fetchable
   on GitHub by hash until garbage-collected; older leaking commits outside `patch` are untouched.
 
+- 2026-10-08: versioning now FOLLOWS UPSTREAM (buildSrc, version.properties, PXTasks,
+  app/build.gradle.kts) to keep rebases cheap; our typed-VersionInfo rewrite was removed from history
+  ("build: harden versioning pipeline" dropped; "build: re-architect version bumping" reduced to its
+  non-versioning hunks). Kept fork-only: release URL in `BuildUtils.kt` (upstream hardcodes its repo),
+  debug builds signed with the debug key, forkBuild/flake reading upstream's outputs. Accepted trade-
+  off: upstream's `buildCanary` chains `finalizedBy` with no ordering and stamps the APK version at
+  configuration time -- the "APK lags metadata by one build" class of bug our rewrite fixed. Verify on
+  the next build; if it recurs, fix it UPSTREAM (PR to the community fork) rather than diverging.
+  Version line jumps to upstream's (524 -> next 525), above the installed 499.
+
 ## Session log
 - Sessions 1-8 (to 2026-06-21): fork setup, CI, repo cleanup, force-close, settings reorg, logging.
   Detail in `git log -p claude/progress.md` and the workstream files.
