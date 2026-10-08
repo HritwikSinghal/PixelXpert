@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:search="http://schemas.android.com/apk/sh.siava.pixelxpert.ui.preferencesearch">
+
+	<sh.siava.pixelxpert.ui.preferences.IllustrationPreference
+		android:key="system_ui_illustration"
+		app:lottie_rawRes="@raw/lottie_quick_settings"
+		search:ignore="true" />
+
+	<!-- Nav rows: their target screens (quicksettings_prefs / statusbar_settings) are already
+	     indexed for search, so ignore the rows here to avoid duplicate search hits. -->
+	<sh.siava.pixelxpert.ui.preferences.MaterialPreference
+		android:key="quicksettings_header"
+		android:summary="@string/qs_panel_category_summary"
+		android:title="@string/qs_panel_category_title"
+		app:fragment="sh.siava.pixelxpert.ui.fragments.QuickSettingsFragment"
+		app:iconSpaceReserved="false"
+		search:ignore="true" />
+
+	<sh.siava.pixelxpert.ui.preferences.MaterialPreference
+		android:key="statusbar_header"
+		android:summary="@string/statusbar_header_summary"
+		android:title="@string/statusbar_header"
+		app:fragment="sh.siava.pixelxpert.ui.fragments.StatusbarFragment"
+		app:iconSpaceReserved="false"
+		search:ignore="true" />
+
+	<!-- Notifications (relocated from Miscellaneous) -->
+	<sh.siava.pixelxpert.ui.preferences.MaterialPreferenceCategory
+		android:title="@string/notifications_header"
+		app:iconSpaceReserved="false"
+		search:ignore="true">
+
+		<sh.siava.pixelxpert.ui.preferences.MaterialSwitchPreference
+			android:defaultValue="false"
+			android:key="notificationExpandallEnabled"
+			android:summaryOff="@string/general_off"
+			android:summaryOn="@string/general_on"
+			android:title="@string/expand_notifications_icons_title"
+			app:iconSpaceReserved="false" />
+
+		<sh.siava.pixelxpert.ui.preferences.MaterialSwitchPreference
+			android:defaultValue="false"
+			android:key="DisableOngoingNotifDismiss"
+			android:summaryOff="@string/general_off"
+			android:summaryOn="@string/general_on"
+			android:title="@string/disbale_ongoing_notif_dismiss_title"
+			app:iconSpaceReserved="false" />
+
+		<sh.siava.pixelxpert.ui.preferences.MaterialRangeSliderPreference
+			android:key="HeadupAutoDismissNotificationDecay"
+			android:title="@string/heads_up_notification_duration"
+			app:defaultValue="5000"
+			app:iconSpaceReserved="false"
+			app:maxVal="10000"
+			app:minVal="1000"
+			app:tickInterval="500"
+			app:valueCount="1" />
+
+		<sh.siava.pixelxpert.ui.preferences.MaterialListPreference
+			android:defaultValue="0"
+			android:entries="@array/notif_default_expansion_entries"
+			android:entryValues="@array/notif_default_expansion_values"
+			android:key="notificationDefaultExpansion"
+			android:summary="%s"
+			android:title="@string/notif_default_expansion_title"
+			app:iconSpaceReserved="false" />
+
+	</sh.siava.pixelxpert.ui.preferences.MaterialPreferenceCategory>
+</PreferenceScreen>
