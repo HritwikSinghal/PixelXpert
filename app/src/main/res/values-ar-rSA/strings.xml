@@ -235,10 +235,7 @@
     <string name="friday">الجمعة</string>
     <string name="saturday">السبت</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Flashlight-leveled tile</string>
-    <string name="qs_flashlight_level_global_title">تطبيق مستوى الإضاءة على الصعيد العالمي</string>
     <string name="qs_tile_qty_title">إعدادات عدد مربعات الإعدادات السريعة</string>
-    <string name="qs_leveled_flashlight_summary">Longpress on tile to show the slider.\nRequires supported hardware</string>
     <string name="qs_pulldown_size">عرض السحب السريع لأسفل</string>
     <string name="qs_pulldown_switch_title">لوحة الإعدادات السريعة سحب لأسفل من شريط الحالة</string>
     <string name="qs_pulldown_side_title">سحب سريع لأسفل</string>

@@ -235,10 +235,7 @@
     <string name="friday">Sexta-feira</string>
     <string name="saturday">Sábado</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Telha de nível da lanterna</string>
-    <string name="qs_flashlight_level_global_title">Aplicar nível da lanterna globalmente</string>
     <string name="qs_tile_qty_title">Definições do número de atalhos</string>
-    <string name="qs_leveled_flashlight_summary">Mantenha premido para mostrar o controle deslizante.\nRequer hardware compatível</string>
     <string name="qs_pulldown_size">Largura da ação deslize rápido para baixo</string>
     <string name="qs_pulldown_switch_title">Deslize rápido para baixo desde a barra de estado</string>
     <string name="qs_pulldown_side_title">Lado por onde deslizar</string>

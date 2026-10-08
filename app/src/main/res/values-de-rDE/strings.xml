@@ -235,10 +235,7 @@
     <string name="friday">Frietag</string>
     <string name="saturday">Samstag</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Taschenlampen Kachel</string>
-    <string name="qs_flashlight_level_global_title">Wenden die Taschenlampenstufe global an</string>
     <string name="qs_tile_qty_title">Schnelleinstellungen Kachelanzahl Einstellungen</string>
-    <string name="qs_leveled_flashlight_summary">Langes Drücken auf Kachel, um den Schieberegler anzuzeigen.\nBenötigt unterstützte Hardware</string>
     <string name="qs_pulldown_size">Schnell herunterziehen Größe</string>
     <string name="qs_pulldown_switch_title">Schnelles herunterziehen des Schnelleinstellungsmenüs von der Statusleiste </string>
     <string name="qs_pulldown_side_title">Schnelles herunterziehen Seite</string>

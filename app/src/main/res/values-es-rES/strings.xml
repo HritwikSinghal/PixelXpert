@@ -235,10 +235,7 @@
     <string name="friday">Viernes</string>
     <string name="saturday">Sábado</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Toogle a nivel de linterna</string>
-    <string name="qs_flashlight_level_global_title">Aplicar nivel de linterna globalmente</string>
     <string name="qs_tile_qty_title">Configuración de recuento de mosaicos en configuración rápida</string>
-    <string name="qs_leveled_flashlight_summary">Pulsación larga en el toogle para mostrar el deslizador.\nRequiere hardware soportado</string>
     <string name="qs_pulldown_size">Distancia para deslizamiento rápido de ajustes rápidos</string>
     <string name="qs_pulldown_switch_title">Deslize rápido para abajo desde la barra de estado</string>
     <string name="qs_pulldown_side_title">Lado por donde deslizar</string>

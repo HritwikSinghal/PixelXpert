@@ -235,10 +235,7 @@
     <string name="friday">Cuma</string>
     <string name="saturday">Cumartesi</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Seviyeli el feneri düğmesi</string>
-    <string name="qs_flashlight_level_global_title">El feneri seviyesini genel olarak uygula</string>
     <string name="qs_tile_qty_title">Hızlı ayarlar düğme sayısı ayarları</string>
-    <string name="qs_leveled_flashlight_summary">Kaydırıcıyı göstermek için düğmeye uzun basın.\nDesteklenen donanım gerektirir</string>
     <string name="qs_pulldown_size">Hızlı aşağı çekme genişliği</string>
     <string name="qs_pulldown_switch_title">Durum çubuğundan hızlı Hızlı Ayarlar paneli açma</string>
     <string name="qs_pulldown_side_title">Hızlı aşağı çekme tarafı</string>

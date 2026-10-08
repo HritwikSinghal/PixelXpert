@@ -235,10 +235,7 @@
     <string name="friday">Vineri</string>
     <string name="saturday">Sâmbătă</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Dală lanternă</string>
-    <string name="qs_flashlight_level_global_title">Aplică nivelul lanternei global</string>
     <string name="qs_tile_qty_title">Setarea numărului plăcilor</string>
-    <string name="qs_leveled_flashlight_summary">Apasă lung pe dală pentru a afișa glisorul.\nNecesită suport hardware</string>
     <string name="qs_pulldown_size">Lățime tragere rapidă</string>
     <string name="qs_pulldown_switch_title">Panou setări rapide la tragere în jos a barei de stare</string>
     <string name="qs_pulldown_side_title">Poziție tragere rapidă în jos</string>

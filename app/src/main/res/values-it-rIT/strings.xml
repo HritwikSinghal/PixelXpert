@@ -235,10 +235,7 @@
     <string name="friday">Venerdì</string>
     <string name="saturday">Sabato</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Tile torcia livellata</string>
-    <string name="qs_flashlight_level_global_title">Applica livello torcia globalmente</string>
     <string name="qs_tile_qty_title">Impostazioni numero QS Tile</string>
-    <string name="qs_leveled_flashlight_summary">Premi a lungo sul tile per mostrare il cursore.\nRichiede hardware supportato</string>
     <string name="qs_pulldown_size">Larghezza quick pull-down</string>
     <string name="qs_pulldown_switch_title">Pannello quick QS pull-down dalla Status Bar</string>
     <string name="qs_pulldown_side_title">Lato quick pull-down</string>

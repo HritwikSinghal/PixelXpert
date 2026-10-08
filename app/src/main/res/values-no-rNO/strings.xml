@@ -235,10 +235,7 @@
     <string name="friday">fredag</string>
     <string name="saturday">lørdag</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Flashlight-leveled tile</string>
-    <string name="qs_flashlight_level_global_title">Bruk lommelyktnivå globalt</string>
     <string name="qs_tile_qty_title">Hurtiginnstillinger for antall fliser</string>
-    <string name="qs_leveled_flashlight_summary">Longpress on tile to show the slider.\nRequires supported hardware</string>
     <string name="qs_pulldown_size">Rask nedtrekksbredde</string>
     <string name="qs_pulldown_switch_title">Rask QS-paneltrekk ned fra statuslinjen</string>
     <string name="qs_pulldown_side_title">Rask nedtrekksside</string>

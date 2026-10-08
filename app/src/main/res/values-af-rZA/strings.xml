@@ -235,10 +235,7 @@
     <string name="friday">Vrydag</string>
     <string name="saturday">Saterdag</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">Flashlight-leveled tile</string>
-    <string name="qs_flashlight_level_global_title">Pas flitsligvlak wêreldwyd toe</string>
     <string name="qs_tile_qty_title">Vinnige instellings teëltelling instellings</string>
-    <string name="qs_leveled_flashlight_summary">Longpress on tile to show the slider.\nRequires supported hardware</string>
     <string name="qs_pulldown_size">Vinnige aftrekbreedte</string>
     <string name="qs_pulldown_switch_title">Vinnige QS-paneel-aftrek vanaf statusbalk</string>
     <string name="qs_pulldown_side_title">Vinnige aftrekkant</string>

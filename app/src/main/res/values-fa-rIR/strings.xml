@@ -235,10 +235,7 @@
     <string name="friday">جمعه</string>
     <string name="saturday">شنبه</string>
     <!--Quick settings panel related-->
-    <string name="qs_leveled_flashlight_title">کاشی تراز چراغ قوه</string>
-    <string name="qs_flashlight_level_global_title">درجه نور چراغ قوه همه جا اعمال گردد</string>
     <string name="qs_tile_qty_title">تنظیمات سریع تعداد کاشی تنظیمات</string>
-    <string name="qs_leveled_flashlight_summary">برای نمایش لغزنده، روی کاشی را طولانی فشار دهید.\nبه سخت‌افزار پشتیبانی‌شده نیاز دارد</string>
     <string name="qs_pulldown_size">عرض پایین کشی سریع</string>
     <string name="qs_pulldown_switch_title">کشویی سریع پانل QS از نوار وضعیت</string>
     <string name="qs_pulldown_side_title">سمت پایین کشی سریع</string>

@@ -21,21 +21,6 @@
 			app:iconSpaceReserved="false"
 			app:updatesContinuously="true" />
 
-		<sh.siava.pixelxpert.ui.preferences.MaterialSwitchPreference
-			android:defaultValue="false"
-			android:key="leveledFlashTile"
-			android:summary="@string/qs_leveled_flashlight_summary"
-			android:title="@string/qs_leveled_flashlight_title"
-			app:iconSpaceReserved="false" />
-
-		<sh.siava.pixelxpert.ui.preferences.MaterialSwitchPreference
-			android:defaultValue="false"
-			android:key="isFlashLevelGlobal"
-			android:summaryOff="@string/general_off"
-			android:summaryOn="@string/general_on"
-			android:title="@string/qs_flashlight_level_global_title"
-			app:iconSpaceReserved="false" />
-
 		<sh.siava.pixelxpert.ui.preferences.MaterialPreference
 			android:key="qs_tile_qty"
 			android:title="@string/qs_tile_qty_title"
