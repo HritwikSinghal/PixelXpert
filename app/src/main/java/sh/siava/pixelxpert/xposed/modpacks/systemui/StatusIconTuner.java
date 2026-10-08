@@ -80,6 +80,9 @@ public class StatusIconTuner extends XposedModPack {
 	}
 
 	private void setIgnoredIcons(Object container, Set<String> ignorableSlots){
+		// Containers are captured lazily from IconManager construction; a pref load before then (or a
+		// container whose parent id did not match) leaves it null -- nothing to apply yet.
+		if (container == null) return;
 		try
 		{
 			//noinspection unchecked

@@ -16,6 +16,7 @@ import static sh.siava.pixelxpert.xposed.utils.SystemUtils.dimenIdOf;
 import static sh.siava.pixelxpert.xposed.utils.SystemUtils.idOf;
 import static sh.siava.pixelxpert.xposed.utils.SystemUtils.resourceIdOf;
 import static sh.siava.pixelxpert.xposed.utils.toolkit.Logger.log;
+import static sh.siava.pixelxpert.xposed.utils.toolkit.Logger.logVerbose;
 import static sh.siava.pixelxpert.xposed.utils.toolkit.ObjectTools.getStateFlowImplOf;
 import static sh.siava.pixelxpert.xposed.utils.reflection.ReflectionTools.reAddView;
 
@@ -28,6 +29,8 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.UserHandle;
 import android.provider.AlarmClock;
 import android.provider.CalendarContract;
@@ -176,6 +179,9 @@ public class StatusbarMods extends XposedModPack {
 
 	private static boolean VolteIconEnabled = false; //works
 	private final Executor voDataExec = Runnable::run;
+	// Icon changes must run on the main thread. A17 QPR3's Compose status bar root never constructs
+	// PhoneStatusBarView, so mPhoneStatusbarView.post() is not usable for the VoLTE/VoWiFi path.
+	private final Handler mMainHandler = new Handler(Looper.getMainLooper());
 
 	private Object mStatusBarIconController;
 
@@ -579,7 +585,12 @@ public class StatusbarMods extends XposedModPack {
 
 		StatusBarIconControllerImplClass
 				.afterConstruction()
-				.run(param -> mStatusBarIconController = param.thisObject);
+				.run(param -> {
+					mStatusBarIconController = param.thisObject;
+					// The PhoneStatusBarView hook that used to start VoLTE/VoWiFi never fires under the
+					// Compose status bar root, so start from the icon controller, which both paths have.
+					if (VolteIconEnabled || VowifiIconEnabled) initVoData();
+				});
 
 
 		if (NotificationIconContainerAlwaysOnDisplayViewModelClass.getClazz() != null) //Viewbinder implementation of the notification icon container
@@ -1580,15 +1591,13 @@ public class StatusbarMods extends XposedModPack {
 	private void updateVoData(boolean force) {
 		boolean voWifiAvailable = (Boolean) callMethod(SystemUtils.TelephonyManager(), "isWifiCallingAvailable");
 		boolean volteStateAvailable = (Boolean) callMethod(SystemUtils.TelephonyManager(), "isVolteAvailable");
+		logVerbose("StatusbarMods: vo_data volte=" + volteStateAvailable + " vowifi=" + voWifiAvailable
+				+ " controller=" + (mStatusBarIconController != null) + " force=" + force);
 
 		if (lastVolteAvailable != volteStateAvailable || force) {
 			lastVolteAvailable = volteStateAvailable;
 			if (volteStateAvailable && VolteIconEnabled) {
-				mPhoneStatusbarView.post(() -> {
-					try {
-						callMethod(mStatusBarIconController, "setIcon", VO_LTE_SLOT, volteStatusbarIconHolder);
-					} catch (Exception ignored) {}
-				});
+				setSBIconSlot(VO_LTE_SLOT, volteStatusbarIconHolder);
 			} else {
 				removeSBIconSlot(VO_LTE_SLOT);
 			}
@@ -1597,27 +1606,33 @@ public class StatusbarMods extends XposedModPack {
 		if (lastVowifiAvailable != voWifiAvailable || force) {
 			lastVowifiAvailable = voWifiAvailable;
 			if (voWifiAvailable && VowifiIconEnabled) {
-				mPhoneStatusbarView.post(() -> {
-					try {
-						callMethod(mStatusBarIconController, "setIcon", VO_WIFI_SLOT, vowifiStatusbarIconHolder);
-					} catch (Exception ignored) {						
-
-					}
-				});
+				setSBIconSlot(VO_WIFI_SLOT, vowifiStatusbarIconHolder);
 			} else {
 				removeSBIconSlot(VO_WIFI_SLOT);
 			}
 		}
 	}
 
-	private void removeSBIconSlot(String slot) {
-		if (mPhoneStatusbarView == null) return; //probably it's too soon to have a statusbar
+	private void setSBIconSlot(String slot, Object iconHolder) {
+		if (mStatusBarIconController == null || iconHolder == null) return; //too soon; init retries on construction
 
-		mPhoneStatusbarView.post(() -> {
+		mMainHandler.post(() -> {
+			try {
+				callMethod(mStatusBarIconController, "setIcon", slot, iconHolder);
+			} catch (Throwable t) {
+				log("StatusbarMods: setIcon failed for slot " + slot, t);
+			}
+		});
+	}
+
+	private void removeSBIconSlot(String slot) {
+		if (mStatusBarIconController == null) return; //probably it's too soon to have a statusbar
+
+		mMainHandler.post(() -> {
 			try {
 				callMethod(mStatusBarIconController, "removeAllIconsForSlot", slot, false);
-			} catch (Throwable ignored) {						
-
+			} catch (Throwable t) {
+				log("StatusbarMods: removeAllIconsForSlot failed for slot " + slot, t);
 			}
 		});
 	}
