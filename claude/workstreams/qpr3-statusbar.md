@@ -46,6 +46,17 @@ Test device runs a fork build (Obtainium install; fork reuses versionName `canar
   UNVERIFIED: whether the Compose bar renders custom slots set via StatusBarIconController -- if the
   trace shows `controller=true` + no setIcon error but no icon, the slot is not rendered and the
   icon must be injected differently.
+- 2026-10-08 (canary-526 on device): CONFIRMED the slot is not rendered. `dumpsys activity service
+  com.android.systemui/.SystemUIService` -> `StatusBarIconList` shows `(vowifi) holder=...(type=ICON
+  visible=true)`, so our `setIcon` lands, but no icon draws. QPR3 renders status icons through
+  `com.android.systemui.statusbar.systemstatusicons` (Compose): one hardcoded view model per built-in
+  slot (alarm, bluetooth, wifi, zen, ...), plus `ExternalSystemStatusIconRepository`, which is a
+  `CommandQueue$Callbacks` mapping `setIcon(String, StatusBarIcon)` / `removeIcon(String)` to
+  Add/RemoveIcon events consumed by `SystemStatusIconsViewModelImpl.externalSystemStatusIconInteractor`
+  (dexdump of QPR3 SystemUIGoogle). Fix direction: push the icon via `CommandQueue.setIcon(slot,
+  StatusBarIcon)` / `removeIcon(slot)` (both public final) instead of `StatusBarIconController`. Also
+  build the `StatusBarIcon` with its real constructor -- the Compose path may read `type`/`shape`.
+  `settings secure icon_blacklist` is null (not a blocklist issue).
 
 ### The crash (verified from logcat on-device, 2026-10-08)
 `logcat -b crash` -- FATAL in `com.android.systemui`:
