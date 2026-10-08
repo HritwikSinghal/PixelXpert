@@ -8,17 +8,17 @@ import android.content.Context;
 import android.os.VibrationEffect;
 
 import io.github.libxposed.api.XposedModuleInterface;
-import sh.siava.pixelxpert.annotations.ChildProcessModPack;
-import sh.siava.pixelxpert.annotations.MainProcessModPack;
 import sh.siava.pixelxpert.xposed.XposedModPack;
-import sh.siava.pixelxpert.xposed.annotations.TelecomServerModPack;
+import sh.siava.pixelxpert.xposed.annotations.FrameworkModPack;
 import sh.siava.pixelxpert.xposed.utils.SystemUtils;
 import sh.siava.pixelxpert.xposed.utils.reflection.ReflectedClass;
 
 @SuppressWarnings("RedundantThrows")
-@TelecomServerModPack
-@MainProcessModPack //telecom server shouldn't fall under child process checks
-@ChildProcessModPack(processNameContains = "")
+// Telecom (com.android.server.telecom.InCallController) is hosted inside system_server on Pixel,
+// not a standalone process -- so target the framework (system_server), not a telecom package.
+// Targeting com.android.server.telecom required it to be in scope.list, where it never was, so
+// the modpack silently never loaded (broke vibrate-on-call). See claude/progress.md Phase 4.
+@FrameworkModPack
 public class CallVibrator extends XposedModPack {
 	public static final int DIALING = 3;
 	public static final int ACTIVE = 5;
